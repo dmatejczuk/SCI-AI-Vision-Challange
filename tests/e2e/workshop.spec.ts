@@ -9,7 +9,7 @@ async function collectAndTrain(page: Page) {
   });
   await page.getByRole('button', { name: 'Dalej: trening' }).click();
   await page.getByRole('button', { name: /Trenuj model|Trenuj ponownie/ }).click();
-  await expect(page.getByRole('heading', { name: 'Model gotowy!' })).toBeVisible({
+  await expect(page.getByRole('heading', { name: 'Model gotowy' })).toBeVisible({
     timeout: 45000,
   });
 }
@@ -61,7 +61,7 @@ test('complete real ML workshop works with local assets and repeated group reset
     await page.keyboard.press('Space');
     await page.screenshot({ path: `test-results/game-${round}.png`, fullPage: true });
     await expect(page.getByRole('heading', { name: 'Koniec gry' })).toBeVisible({ timeout: 30000 });
-    await page.getByRole('button', { name: 'Teraz zamieńcie się!' }).click();
+    await page.getByRole('button', { name: 'Test z drugą osobą' }).click();
     await page.getByRole('button', { name: 'Sprawdź model' }).click();
     await expect(page.getByRole('heading', { name: 'Jak sobie radzi?' })).toBeVisible();
     if (round === 0) {
@@ -155,7 +155,7 @@ test('camera denial is recoverable and reset remains accessible', async ({ page 
   await page.getByRole('button', { name: 'Rozpocznij', exact: false }).click();
   await expect(page.getByRole('alert')).toContainText('Dostęp do kamery jest zablokowany');
   await reset(page);
-  await expect(page.getByRole('heading', { name: 'Twoja dłoń. Twój kontroler.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sterowanie gestami' })).toBeVisible();
 });
 test('camera loss can be recovered without losing captured data', async ({ page }) => {
   await page.goto('/');

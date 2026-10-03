@@ -179,10 +179,6 @@ nav {
   color: var(--color-success);
   border-color: var(--color-success);
 }
-.duration {
-  font-size: 12px;
-  color: var(--color-muted);
-}
 main {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
@@ -842,9 +838,6 @@ canvas {
   }
   .brand small {
     font-size: 8px;
-  }
-  .duration {
-    display: none;
   }
   .steps {
     gap: 20px;

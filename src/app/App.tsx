@@ -122,7 +122,6 @@ export function App() {
             </li>
           ))}
         </ol>
-        <span className="duration">{pl.duration}</span>
       </nav>
       <main
         className={`${stage === 'GAME' ? 'playing' : ''} ${stage === 'START' ? 'welcome' : ''}`}
