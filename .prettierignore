@@ -1,0 +1,8 @@
+node_modules
+dist
+.browsers
+.tools
+test-results
+playwright-report
+public/models
+package-lock.json
