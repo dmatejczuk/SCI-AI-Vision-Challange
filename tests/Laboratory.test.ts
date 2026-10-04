@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
+  vectorMetrics,
+  patchBounds,
+  pixelDifference,
   histogram,
   statistics,
   sourceToInput,
@@ -113,5 +116,46 @@ describe('Laboratory numerical inspection', () => {
     expect(history.read(6000)).toEqual([]);
     history.clear();
     expect(history.read(2000)).toEqual([]);
+  });
+});
+
+describe('Full-space comparisons and patch geometry', () => {
+  it('calculates distance and cosine with a defined zero-vector case', () => {
+    expect(vectorMetrics([3, 4], [3, 4])).toEqual({ distance: 0, cosine: 1 });
+    expect(vectorMetrics([1, 0], [0, 1])).toEqual({ distance: Math.sqrt(2), cosine: 0 });
+    expect(vectorMetrics([0, 0], [1, 1]).cosine).toBeNull();
+    expect(() => vectorMetrics([1], [1, 2])).toThrow();
+  });
+  it('keeps every patch within the actual source image at all edges', () => {
+    for (const size of [4, 8, 16, 32])
+      for (const x of [0, 320, 639])
+        for (const y of [0, 240, 479]) {
+          const r = patchBounds({ width: 640, height: 480 }, x, y, size);
+          expect(r.width).toBe(size);
+          expect(r.height).toBe(size);
+          expect(r.left).toBeGreaterThanOrEqual(0);
+          expect(r.top).toBeGreaterThanOrEqual(0);
+          expect(r.left + r.width).toBeLessThanOrEqual(640);
+          expect(r.top + r.height).toBeLessThanOrEqual(480);
+        }
+  });
+  it('attaches full-space distances and stable per-class identifiers to PCA points', () => {
+    const p = projectPca(
+      [
+        { label: 'OPEN', values: new Float32Array([0, 0, 0]) },
+        { label: 'FIST', values: new Float32Array([3, 4, 12]) },
+      ],
+      new Float32Array([0, 0, 0]),
+    );
+    expect(p.points[0].sampleId).toBe(1);
+    expect(p.points[1].sampleId).toBe(1);
+    expect(p.points[1].distance).toBe(13);
+    expect(p.points[0].cosine).toBeNull();
+  });
+  it('compares RGB excluding alpha on the original 0–255 scale', () => {
+    const a = { width: 1, height: 1, data: new Uint8ClampedArray([0, 20, 40, 0]) } as ImageData;
+    const b = { ...a, data: new Uint8ClampedArray([30, 50, 70, 255]) };
+    expect(pixelDifference(a, b)).toBe(30);
+    expect(pixelDifference(a, { ...b, width: 2 })).toBeNull();
   });
 });

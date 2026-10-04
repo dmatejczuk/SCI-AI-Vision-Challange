@@ -65,3 +65,21 @@ Ask: Which data did your model see? What changed for the second person? Did more
    activation request is in progress. Start a new group: no prior frame, summary, history or data remains.
 10. Check keyboard/touch interaction, mobile vertical scrolling and physical webcam availability.
     Measure the basic route with actual participants; the 45–60-second target is not a benchmark result.
+
+## Interactive why/pixels/features extension
+
+- Move the selection by clicking, dragging and keyboard arrows. Check all four patch sizes,
+  corner bounds, exact coordinates and unchanged selection size when zooming. Inspect 32×32 on
+  a phone; only the patch should scroll horizontally, never the whole page.
+- Switch color/R/G/B/brightness/normalized. Verify patch histograms total N² pixels; inspect a
+  source point outside the central crop and an inside point with actual tensor readback.
+- Compare the same gesture moved, then OPEN/FIST. Inspect A/B/difference at the same index and
+  distinguish RGB difference, feature distance, cosine and classifier output.
+- Check a 54/46-like output: ambiguous wording, failed threshold where appropriate, and no
+  asserted hand-part explanation. Check both OPEN and FIST high-score cases.
+- Filter PCA and inspect sample IDs with mouse and keyboard. Compare full-space nearest examples
+  with the 2D map; do not assume their nearest-neighbour order must agree.
+- Run 4×4 and 8×8 region masking, cancel mid-run and start a new group mid-run. Verify the frozen
+  image and original result remain unchanged and the game does not jump.
+- In the challenge, change background/pose, freeze, select the correct human label, add/retrain
+  and retest. Confirm sample count increases only for that label; at the cap adding is disabled.

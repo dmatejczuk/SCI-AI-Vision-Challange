@@ -1,3 +1,6 @@
+import { WhyPanel, WhySummary } from './WhyPanel';
+import { VectorComparison } from './VectorComparison';
+import { lab } from '../../i18n/lab';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { pl } from '../../i18n/pl';
 import type { SessionManager } from '../../services/SessionManager';
@@ -294,6 +297,14 @@ function Laboratory({
               </p>
               <Scores scores={snapshot.classScores} snapshot={snapshot} />
               <p>{t.scoreNote}</p>
+              {detailed && (
+                <WhyPanel
+                  snapshot={snapshot}
+                  session={session}
+                  busy={state.busy}
+                  progress={state.progress}
+                />
+              )}
               <p>
                 {t.examples}: OPEN — {snapshot.samples.OPEN} / FIST — {snapshot.samples.FIST}
               </p>
@@ -363,6 +374,7 @@ function Laboratory({
                 )}
                 <p>{t.actionHelp}</p>
               </div>
+              <WhySummary snapshot={snapshot} />
               <p className="explanation-callout">{t.descriptions[7]}</p>
             </>
           )}
@@ -409,6 +421,7 @@ function Laboratory({
           )}
         </aside>
       </div>
+      {step === 5 && detailed && comparison && <VectorComparison a={comparison} b={snapshot} />}
       {step === 8 && comparison && <SnapshotComparison current={snapshot} previous={comparison} />}
       {step === 8 && !comparison && previous && (
         <div className="comparison">
@@ -449,14 +462,22 @@ function Laboratory({
 }
 export function ExplanationView({ session }: { session: SessionManager }) {
   const state = useSyncExternalStore(session.subscribe, session.getSnapshot);
-  const { snapshot, partnerExperiment, comparison } = state.explanation;
+  const { snapshot, partnerExperiment, comparison, challenge } = state.explanation;
   if (snapshot) return <Laboratory key={snapshot.id} session={session} snapshot={snapshot} />;
   return (
     <section className="explanation-copy">
       <div className="eyebrow">{t.entry}</div>
-      <h1>{t.welcome}</h1>
+      <h1>{challenge ? lab.trick : t.welcome}</h1>
       <p className="lead">{t.labIntro}</p>
-      <p>{partnerExperiment ? t.partnerHelp : comparison ? t.compareHelp : t.instruction}</p>
+      <p>
+        {challenge
+          ? lab.trickHelp
+          : partnerExperiment
+            ? t.partnerHelp
+            : comparison
+              ? lab.compareHelp
+              : t.instruction}
+      </p>
       <button
         className="primary"
         disabled={state.busy || !!state.error}

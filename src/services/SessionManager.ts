@@ -1,3 +1,4 @@
+import { analyzeOcclusion } from '../features/explanation/Occlusion';
 import { PredictionHistory } from '../features/prediction/PredictionHistory';
 import { projectPca } from '../features/explanation/labMath';
 import { InferencePipeline } from '../features/prediction/InferencePipeline';
@@ -86,6 +87,7 @@ export class SessionManager {
   gestures = new GestureController();
   predictor = new PredictionService();
   history = new PredictionHistory();
+  private occlusionAbort: AbortController | null = null;
   private labController: GestureController | null = null;
   game = new GameController();
   camera = new CameraService(() => this.fail('lost', new Error('Camera track ended')));
@@ -367,6 +369,7 @@ export class SessionManager {
   async resetSession() {
     if (this.snapshot.resetting) return;
     this.abort.abort();
+    this.occlusionAbort?.abort();
     this.history.clear();
     this.clearExplanation();
     this.predictor.stop();
@@ -439,7 +442,12 @@ export class SessionManager {
       snapshot.history = this.history.read(snapshot.timestamp);
       snapshot.trainingMeans = this.dataset.means();
       this.patch({
-        explanation: { ...current, snapshot, step: 1, analysisCount: current.analysisCount + 1 },
+        explanation: {
+          ...current,
+          snapshot,
+          step: current.challenge ? 6 : current.comparison ? 5 : 1,
+          analysisCount: current.analysisCount + 1,
+        },
       });
     }, 'explanation');
   }
@@ -462,7 +470,15 @@ export class SessionManager {
     if (!compare) releaseSnapshot(current.snapshot);
     const comparison = compare ? current.snapshot : null;
     this.patch({
-      explanation: { ...current, snapshot: null, comparison, previous, step: 0, partnerExperiment },
+      explanation: {
+        ...current,
+        snapshot: null,
+        comparison,
+        previous,
+        step: 0,
+        partnerExperiment,
+        challenge: false,
+      },
       error: null,
     });
     this.history.clear();
@@ -501,6 +517,60 @@ export class SessionManager {
         explanation: { ...this.snapshot.explanation, snapshot: { ...snapshot, activations } },
       });
     }, 'explanation');
+  }
+  inspectOcclusion(grid = 4) {
+    const snapshot = this.snapshot.explanation.snapshot;
+    if (!snapshot || this.snapshot.stage !== 'EXPLAIN' || this.snapshot.busy)
+      return Promise.resolve();
+    const local = new AbortController();
+    this.occlusionAbort = local;
+    return this.run(async (signal) => {
+      try {
+        const occlusion = await analyzeOcclusion(
+          snapshot,
+          this.pipeline,
+          grid,
+          () => signal.aborted || local.signal.aborted,
+          (progress) => this.patch({ progress }),
+        );
+        if (!occlusion) return;
+        if (signal.aborted || local.signal.aborted) {
+          occlusion.scores.fill(0);
+          occlusion.deltas.fill(0);
+          return;
+        }
+        snapshot.occlusion?.scores.fill(0);
+        snapshot.occlusion?.deltas.fill(0);
+        this.patch({
+          explanation: { ...this.snapshot.explanation, snapshot: { ...snapshot, occlusion } },
+        });
+      } finally {
+        if (this.occlusionAbort === local) this.occlusionAbort = null;
+      }
+    }, 'explanation');
+  }
+  cancelOcclusion() {
+    this.occlusionAbort?.abort();
+  }
+  challengeModel() {
+    if (this.snapshot.busy || this.snapshot.stage !== 'EXPLAIN') return;
+    this.anotherFrame();
+    this.patch({ explanation: { ...this.snapshot.explanation, detailed: true, challenge: true } });
+  }
+  async addFrozenExample(label: Gesture) {
+    const snapshot = this.snapshot.explanation.snapshot;
+    if (
+      !snapshot ||
+      this.snapshot.busy ||
+      this.snapshot.stage !== 'EXPLAIN' ||
+      !['OPEN', 'FIST'].includes(label) ||
+      this.dataset.counts[label] >= config.maximumSamples
+    )
+      return;
+    this.dataset.add(label, snapshot.featureVector);
+    this.patch({ counts: this.dataset.counts });
+    this.clearExplanation(true);
+    await this.train();
   }
   diagnostics() {
     return {

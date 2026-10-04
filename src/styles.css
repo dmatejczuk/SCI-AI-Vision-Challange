@@ -1588,3 +1588,103 @@ canvas {
     max-width: 100%;
   }
 }
+
+/* Snapshot-only interactive laboratory. */
+.patch-scroll {
+  overflow: auto;
+  max-width: 100%;
+  max-height: 480px;
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  margin: 12px 0;
+}
+.lab-shell .patch-canvas {
+  display: block;
+  max-width: none;
+  image-rendering: pixelated;
+  touch-action: none;
+}
+.patch-zoom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+}
+.patch-coordinates {
+  display: block;
+  font-variant-numeric: tabular-nums;
+}
+.pixel-layout > * {
+  min-width: 0;
+}
+.explanation-frame canvas {
+  touch-action: none;
+}
+.numeric-flow code {
+  display: block;
+  max-width: 220px;
+  font-size: 11px;
+  line-height: 1.7;
+  font-weight: normal;
+  overflow-wrap: anywhere;
+}
+.numeric-flow > b {
+  animation: flow-pulse 2.5s ease-in-out infinite;
+}
+@keyframes flow-pulse {
+  50% {
+    opacity: 0.3;
+    transform: translateX(4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .numeric-flow > b {
+    animation: none;
+  }
+}
+.why-panel {
+  margin-top: 24px;
+  border-top: 1px solid var(--color-line);
+  padding-top: 20px;
+}
+.why-panel h2 {
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+}
+.why-summary {
+  padding: 18px;
+  background: #eef3e6;
+  border-radius: 14px;
+  margin-top: 20px;
+}
+.why-summary li {
+  padding: 5px 0;
+}
+.occlusion-map canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.occlusion-experiment output {
+  display: block;
+  font-variant-numeric: tabular-nums;
+}
+.vector-comparison {
+  padding: 24px;
+  background: white;
+  border: 1px solid var(--color-line);
+  border-radius: 18px;
+  margin: 24px 0;
+}
+.pca-plot text {
+  font-size: 12px;
+}
+
+.lab-shell select {
+  font: inherit;
+  padding: 8px 10px;
+  margin: 6px 8px;
+  border: 1px solid var(--color-line);
+  border-radius: 6px;
+  background: white;
+  color: var(--color-primary);
+}

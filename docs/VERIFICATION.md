@@ -1,3 +1,42 @@
+# Interactive explanation extension — 2026-10-04
+
+- TypeScript strict checks, ESLint and all **36 unit tests** pass.
+- All **10 browser regression scenarios** pass (3.6 minutes), including the complete workshop,
+  CPU fallback, independent clients, camera recovery, Phaser controls and the expanded laboratory.
+- The detailed UI scenario verifies patch sizes and independent zoom, RGB and normalized values,
+  brightness, mobile overflow, PCA filters and point inspection, actual occlusion output, A/B/difference
+  inspection, retraining, game return and session reset. The isolated scenario passed in 42.3 seconds.
+- The real-model integration harness independently recomputes the first masked region's class score
+  and delta, verifies unchanged source pixels and TensorFlow tensor count, cancels a replacement
+  analysis without replacing the cached result, adds the exact frozen embedding to the explicitly
+  chosen FIST class, retrains, then resets during another occlusion run. Reset leaves zero tensors
+  and zeroed image/input/feature buffers for both retained snapshots.
+- The additional challenge UI scenario passes (23.5 seconds): direct freeze into detailed
+  classification, 8×8 occlusion cancellation, disabled add/retrain until a human label is selected,
+  actual retraining, OPEN 30/FIST 31 sample counts and model revision 2 after retesting.
+  Together with the regression suite, all **11 browser scenarios** have passed.
+- The real-model memory/occlusion harness was rerun after the cancellation fix and passes (15.7 seconds).
+- Unit coverage includes full-dimensional Euclidean/cosine metrics (including zero vectors), original
+  per-class sample IDs, patch edge bounds, RGB difference excluding alpha, 54/46 ambiguity wording,
+  threshold failure, and the explicit distinction between controller preview and game action.
+- An additional cancellation review found and fixed the final-iteration yield race. Dedicated tests
+  cancel immediately after the last inference and inject an inference failure; temporary buffers are
+  cleared, source pixels are preserved, and no canceled result is returned or stored.
+- Desktop and 390px mobile screenshots were visually inspected. Source selection and Canvas patch
+  match; wide patches scroll within their own container. PCA and occlusion describe their limitations.
+- Physical hand/camera accuracy remains an on-site check. Browser tests use a synthetic camera with
+  the real packaged MobileNet, Dense classifier and Phaser, never fabricated predictions.
+- Docker has not been redeployed for this extension.
+
+- Production build passes: **1,326 modules**, local model integrity verified, 5m 43s compilation.
+  No new runtime dependencies were added.
+- Both production-preview scenarios pass at http://localhost:4173: the full laboratory (41.5 seconds,
+  including arrow movement from the image edge) and the human-labelled challenge/retraining flow
+  (24.1 seconds). The served asset hash matches the final build. Final vector comparison screenshots
+  were inspected as well.
+
+Earlier verification reports follow; their test counts refer to those versions.
+
 # Detailed laboratory verification — 2026-10-04
 
 - TypeScript strict checking and ESLint pass. All 28 unit tests pass.

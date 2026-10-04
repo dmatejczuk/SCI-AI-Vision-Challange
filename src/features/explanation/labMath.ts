@@ -48,6 +48,9 @@ export interface PcaPoint {
   y: number;
   label: 'OPEN' | 'FIST' | 'CURRENT';
   index: number;
+  sampleId?: number;
+  distance?: number;
+  cosine?: number | null;
 }
 export interface PcaResult {
   points: PcaPoint[];
@@ -119,7 +122,11 @@ export function projectPca(
   });
   return {
     points: [
-      ...rows.map((row, i) => point(row, samples[i].label, i)),
+      ...rows.map((row, i) => ({
+        ...point(row, samples[i].label, i),
+        sampleId: samples.slice(0, i + 1).filter((s) => s.label === samples[i].label).length,
+        ...vectorMetrics(samples[i].values, current),
+      })),
       point(
         Float64Array.from(current, (v, j) => v - mean[j]),
         'CURRENT',
@@ -128,4 +135,44 @@ export function projectPca(
     ],
     explained: eigenvalues.map((v) => (total > 0 ? v / total : 0)),
   };
+}
+
+// Full-dimensional descriptive metrics, never classifier probabilities.
+export function vectorMetrics(a: ArrayLike<number>, b: ArrayLike<number>) {
+  if (a.length !== b.length || !a.length) throw new Error('Vector dimensions differ');
+  let square = 0,
+    dot = 0,
+    aa = 0,
+    bb = 0;
+  for (let i = 0; i < a.length; i++) {
+    square += (a[i] - b[i]) ** 2;
+    dot += a[i] * b[i];
+    aa += a[i] ** 2;
+    bb += b[i] ** 2;
+  }
+  return {
+    distance: Math.sqrt(square),
+    cosine: aa && bb ? clamp(dot / Math.sqrt(aa * bb), -1, 1) : null,
+  };
+}
+export function patchBounds(
+  frame: { width: number; height: number },
+  x: number,
+  y: number,
+  size: number,
+) {
+  const width = Math.min(size, frame.width),
+    height = Math.min(size, frame.height);
+  return {
+    left: clamp(Math.floor(x - width / 2), 0, frame.width - width),
+    top: clamp(Math.floor(y - height / 2), 0, frame.height - height),
+    width,
+    height,
+  };
+}
+export function pixelDifference(a: ImageData, b: ImageData) {
+  if (a.width !== b.width || a.height !== b.height) return null;
+  let sum = 0;
+  for (let i = 0; i < a.data.length; i++) if (i % 4 !== 3) sum += Math.abs(a.data[i] - b.data[i]);
+  return sum / (a.width * a.height * 3);
 }

@@ -4,10 +4,12 @@ import type { SessionManager } from '../../services/SessionManager';
 import type { InferenceSnapshot } from './types';
 import { statistics, type PcaResult } from './labMath';
 import { DataPlot, Heatmap } from './DataPlot';
+import { lab } from '../../i18n/lab';
 const t = pl.explanation;
 export function PcaPlot({ result }: { result: PcaResult }) {
   const [hover, setHover] = useState(0);
   const [zoom, setZoom] = useState(1);
+  const [filter, setFilter] = useState('ALL');
   const xs = result.points.map((p) => p.x),
     ys = result.points.map((p) => p.y);
   const minX = Math.min(...xs, 0),
@@ -18,10 +20,28 @@ export function PcaPlot({ result }: { result: PcaResult }) {
   const x = (v: number) => 300 + (v - (minX + maxX) / 2) * scale;
   const y = (v: number) => 175 - (v - (minY + maxY) / 2) * scale;
   const point = result.points[hover];
-  const label = (value: string) => (value === 'CURRENT' ? t.current : value);
+  const label = (value: string) => (value === 'CURRENT' ? lab.yourImage : value);
   return (
     <figure className="pca-plot">
       <figcaption>{t.pca}</figcaption>
+      <div className="segmented">
+        {[
+          ['ALL', lab.all],
+          ['OPEN', lab.onlyOpen],
+          ['FIST', lab.onlyFist],
+        ].map(([v, l]) => (
+          <button
+            key={v}
+            aria-pressed={filter === v}
+            onClick={() => {
+              setFilter(v);
+              setHover(result.points.findIndex((p) => p.label === 'CURRENT'));
+            }}
+          >
+            {l}
+          </button>
+        ))}
+      </div>
       <svg viewBox="0 0 600 350" role="img" aria-label={t.pca}>
         <line x1="55" x2="555" y1="305" y2="305" stroke="#61716c" />
         <line x1="55" x2="55" y1="35" y2="305" stroke="#61716c" />
@@ -43,6 +63,7 @@ export function PcaPlot({ result }: { result: PcaResult }) {
         ))}
         {result.points.map(
           (p, i) =>
+            (filter === 'ALL' || p.label === filter || p.label === 'CURRENT') &&
             x(p.x) >= 55 &&
             x(p.x) <= 555 &&
             y(p.y) >= 35 &&
@@ -51,28 +72,53 @@ export function PcaPlot({ result }: { result: PcaResult }) {
                 key={i}
                 cx={x(p.x)}
                 cy={y(p.y)}
-                r={p.label === 'CURRENT' ? 7 : 4}
+                r={p.label === 'CURRENT' ? 11 : 4}
                 fill={p.label === 'OPEN' ? '#24754d' : p.label === 'FIST' ? '#306ea9' : '#b74335'}
                 stroke={i === hover ? '#172f2c' : 'white'}
                 tabIndex={0}
+                onClick={() => setHover(i)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') setHover(i);
+                }}
                 onPointerEnter={() => setHover(i)}
                 onFocus={() => setHover(i)}
               >
                 <title>
-                  {label(p.label)} #{p.index}: {p.x.toFixed(5)}, {p.y.toFixed(5)}
+                  {label(p.label)} #{p.sampleId ?? p.index}: {p.x.toFixed(5)}, {p.y.toFixed(5)}
                 </title>
               </circle>
             ),
         )}
+        {result.points
+          .filter(
+            (p) =>
+              p.label === 'CURRENT' &&
+              x(p.x) >= 55 &&
+              x(p.x) <= 555 &&
+              y(p.y) >= 35 &&
+              y(p.y) <= 305,
+          )
+          .map((p) => (
+            <text
+              key="current-label"
+              x={Math.max(100, Math.min(480, x(p.x)))}
+              y={Math.max(20, Math.min(290, y(p.y) - 18))}
+              textAnchor="middle"
+              fill="#b74335"
+              fontWeight="bold"
+            >
+              {lab.yourImage}
+            </text>
+          ))}
       </svg>
       <div className="plot-legend">
         <span style={{ color: '#24754d' }}>● OPEN</span>
         <span style={{ color: '#306ea9' }}>● FIST</span>
-        <span style={{ color: '#b74335' }}>● {t.current}</span>
+        <span style={{ color: '#b74335' }}>● {lab.yourImage}</span>
       </div>
       <output>
         {point &&
-          `${label(point.label)} #${point.index}: ${point.x.toFixed(5)}, ${point.y.toFixed(5)}`}
+          `${label(point.label)} ${point.sampleId ? `#${point.sampleId}` : ''} · PCA: ${point.x.toFixed(5)}, ${point.y.toFixed(5)}${point.distance !== undefined ? ` · ${lab.distance}: ${point.distance.toFixed(5)} · ${lab.cosine}: ${point.cosine?.toFixed(5) ?? '—'}` : ''}`}
       </output>
       <label>
         {t.zoom}
@@ -107,10 +153,17 @@ export function FeatureInspector({
   const means = snapshot.trainingMeans;
   return (
     <>
-      <div className="feature-compression">
+      <h3>{lab.whatFeatures}</h3>
+      <p>{lab.featureIntro}</p>
+      <div className="feature-compression numeric-flow">
         <span>
           {snapshot.inputValues.length.toLocaleString('pl-PL')} {t.values}
           <small>{t.tensorValue}</small>
+          <code>
+            {Array.from(snapshot.inputValues.slice(0, 24))
+              .map((v) => v.toFixed(2))
+              .join(' ')}
+          </code>
         </span>
         <b>→</b>
         <span>
@@ -120,8 +173,30 @@ export function FeatureInspector({
         <span>
           {snapshot.featureVector.length} {t.values}
           <small>{t.features}</small>
+          <code>
+            {Array.from(snapshot.featureVector.slice(0, 6))
+              .map((v) => v.toFixed(3))
+              .join(' · ')}
+          </code>
         </span>
       </div>
+      <small>{lab.excerpt}</small>
+      <div className="explanation-callout">
+        <h3>{lab.finger}</h3>
+        <p>{lab.distributed}</p>
+      </div>
+      <details>
+        <summary>{lab.deeper}</summary>
+        <p>{lab.featureDeeper}</p>
+      </details>
+      {detailed && (
+        <section>
+          <p>{lab.compareHelp}</p>
+          <button disabled={busy} onClick={() => session.anotherFrame(false, true)}>
+            {lab.compare}
+          </button>
+        </section>
+      )}
       {detailed && (
         <div className="segmented">
           <button aria-pressed={mode === 'chart'} onClick={() => setMode('chart')}>

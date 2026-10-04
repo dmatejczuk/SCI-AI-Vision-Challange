@@ -195,8 +195,11 @@ snapshot, alongside its prepared image. No TensorFlow tensor is retained by a sn
 
 ### Inspection and visualization
 
-- Pixels: click, move the pointer or use arrow keys on the source image. Inspect an 8×8 patch,
-  individual RGB values, channel matrices, intensity bars and full-frame 256-bin RGB histograms.
+- Pixels: click, drag or use arrow keys on the source image. The exact selection rectangle matches
+  the 4×4, 8×8, 16×16 or 32×32 patch. Zoom changes visual cell size only. Canvas supports RGB,
+  individual channels, weighted brightness and actual normalized tensor samples with crop/mapping
+  caveats. The selected-channel histogram uses the selected patch; full-frame histograms remain in
+  a separate disclosure. These interactions never rerun inference.
 - Preparation: actual crop coordinates and before/after images; the same normalization formula on
   the selected source pixel, plus an illustrative slider that does not alter the model input.
   Mapping shows the nearest output location and its exact tensor values. Bilinear interpolation
@@ -249,3 +252,38 @@ statistics, PCA on known data, ring-buffer bounds and comparison cleanup. Browse
 the real packaged model, classifier and Phaser with a synthetic camera. It checks all detailed
 views, a basic walkthrough, repeated snapshots, on-demand activations/PCA, retraining, game return
 and group reset. See `docs/VERIFICATION.md` for results and physical-camera acceptance limits.
+
+### Why this class? Interactive extension
+
+The detailed classification stage explains the actual 256-feature → Dense → softmax pipeline.
+A score gap below 0.20 is described explicitly as a classroom ambiguity heuristic; failure to reach
+captured controller thresholds is distinguished from a confident output. No hand-part interpretation
+is inferred from activations or a feature index. The final summary reports actual scores, thresholds
+and the cloned controller's transition, and explicitly states that this inspection did not jump.
+
+The main example map supports OPEN/FIST filters and pointer/keyboard point inspection. Sample IDs
+are one-based within each class. Euclidean distances, mean per-class distances and the five nearest
+examples are computed in the original full feature space, not the PCA projection. Cosine similarity
+is a raw value, never a confidence percentage; zero-vector cosine is undefined. These metrics describe
+representations and do not explain Dense as a nearest-neighbour classifier. No 2D decision boundary
+is drawn because discarded dimensions also contribute to the actual classifier.
+
+From Features, “PORÓWNAJ DWA OBRAZY” retains A and captures B. The comparison opens at Features and
+shows A/B/absolute-difference modes, common-index tooltips, range zoom, Euclidean distance, cosine
+and mean absolute RGB difference between prepared images (0–255). Pixel and feature metrics have
+explicitly different scales. Educational text and a reduced-motion-aware numeric flow use actual
+input/feature values and explain distributed meaning without promising gesture invariance.
+
+“Które fragmenty obrazu mają znaczenie?” performs 16 or 64 actual sequential predictions, on demand.
+Each trial starts from a fresh copy of the original source pixels, masks one central-crop region
+with RGB(128,128,128), and measures baseline minus perturbed score for the **original winning class**.
+Signed red/blue overlays scale to the largest absolute change in that experiment. This is sensitivity
+to the specified perturbation, not an attention map or proof of semantic understanding. Cancellation
+is checked around each inference; temporary buffers are zeroed in finally blocks. Only score/delta
+arrays are retained, with the frozen snapshot, and cleared on exit/reset. The live game controller
+is never called. The experiment exposes progress and cancellation; the normal workshop is unchanged.
+
+The optional challenge restarts the live laboratory preview and freezes directly into detailed
+classification. Adding that exact embedding requires an explicit human OPEN/FIST label and respects
+the 180-per-class cap. It retrains the actual classifier; the normal test screen then allows another
+check. Frozen photos are released, and only the explicitly labelled embedding enters the dataset.

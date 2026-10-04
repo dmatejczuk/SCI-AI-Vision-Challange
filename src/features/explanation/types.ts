@@ -1,3 +1,4 @@
+import type { OcclusionResult } from './Occlusion';
 import type { Histogram, PcaResult } from './labMath';
 import type { HistoryPoint } from '../prediction/PredictionHistory';
 import type { Gesture, SampleCounts } from '../../types';
@@ -38,6 +39,7 @@ export interface InferenceSnapshot extends SnapshotSummary {
   trainingMeans: { open: Float32Array; fist: Float32Array; difference: Float32Array } | null;
   pca: PcaResult | null;
   activations: ActivationLayer[] | null;
+  occlusion?: OcclusionResult;
   acceptedGesture: Gesture | null;
   samples: SampleCounts;
   gesturePreview: GesturePreview;
@@ -58,6 +60,7 @@ export interface ExplanationState {
   detailed: boolean;
   partnerExperiment: boolean;
   analysisCount: number;
+  challenge?: boolean;
 }
 export const emptyExplanation = (): ExplanationState => ({
   step: 0,
@@ -82,6 +85,8 @@ export function summarizeSnapshot(snapshot: InferenceSnapshot): SnapshotSummary 
 }
 export function releaseSnapshot(snapshot: InferenceSnapshot | null) {
   if (!snapshot) return;
+  snapshot.occlusion?.scores.fill(0);
+  snapshot.occlusion?.deltas.fill(0);
   snapshot.sourceFrame.data.fill(0);
   snapshot.preparedFrame.data.fill(0);
   snapshot.featureVector.fill(0);

@@ -16,9 +16,11 @@ export function DataPlot({
   zoom = true,
   domain,
   markers = [],
+  tooltipSeries,
 }: {
   title: string;
   series: PlotSeries[];
+  tooltipSeries?: PlotSeries[];
   xLabel: string;
   yLabel: string;
   xValues?: number[];
@@ -154,7 +156,9 @@ export function DataPlot({
       </div>
       <output className="plot-tooltip">
         {xLabel}: {(xValues?.[selected] ?? selected).toFixed(xValues ? 2 : 0)} ·{' '}
-        {series.map((s) => `${s.label}: ${Number(s.values[selected] ?? 0).toFixed(4)}`).join(' · ')}{' '}
+        {(tooltipSeries ?? series)
+          .map((s) => `${s.label}: ${Number(s.values[selected] ?? 0).toFixed(4)}`)
+          .join(' · ')}{' '}
         {markers
           .filter((m) => m.index === selected)
           .map((m) => m.label)
