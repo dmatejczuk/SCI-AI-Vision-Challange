@@ -294,3 +294,259 @@ test('Phaser responds to gesture transitions and SPACE without repeating held in
     heldStill: true,
   });
 });
+
+test('frozen frame laboratory inspects real data, compares and returns to game', async ({
+  page,
+}) => {
+  test.setTimeout(240000);
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Rozpocznij', exact: false }).click();
+  await expect(page.getByRole('heading', { name: 'Pokaż otwartą dłoń' })).toBeVisible({
+    timeout: 60000,
+  });
+  await collectAndTrain(page);
+  await page.getByRole('button', { name: 'Sprawdź go' }).click();
+  await page.getByRole('button', { name: 'JAK AI TO WIDZI?', exact: true }).click();
+  await expect(page.locator('video')).toBeVisible();
+  await page.getByRole('button', { name: 'ZATRZYMAJ KLATKĘ' }).click();
+  await expect(page.getByRole('heading', { name: 'Obraz z kamery', exact: true })).toBeVisible();
+  const original = await page
+    .locator('.explanation-frame canvas')
+    .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
+  await page.getByRole('button', { name: 'POKAŻ WIĘCEJ', exact: true }).click();
+  const stage = async (index: number) =>
+    page
+      .locator('.lab-pipeline button')
+      .nth(index - 1)
+      .click();
+  await stage(2);
+  const source = page.locator('.explanation-frame canvas');
+  const box = (await source.boundingBox())!;
+  await source.click({ position: { x: box.width / 4, y: box.height / 4 } });
+  const rgb = await source.evaluate((canvas) => {
+    const c = canvas as HTMLCanvasElement;
+    return Array.from(
+      c.getContext('2d')!.getImageData(Math.floor(c.width / 4), Math.floor(c.height / 4), 1, 1)
+        .data,
+    ).slice(0, 3);
+  });
+  await expect(page.locator('.pixel-readout')).toContainText(`RGB(${rgb.join(', ')})`);
+  await page.getByRole('button', { name: 'R', exact: true }).click();
+  await expect(page.locator('.pixel-grid button')).toHaveCount(64);
+  await expect(page.locator('.pixel-grid button').first()).toHaveText(/^[0-9]+$/);
+  await page.locator('summary').filter({ hasText: 'ROZKŁAD KOLORÓW' }).click();
+  await page.screenshot({ path: 'test-results/laboratory-pixels.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+  await page.screenshot({ path: 'test-results/laboratory-mobile.png', fullPage: true });
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await stage(3);
+  await expect(page.locator('.prepared-pair canvas')).toHaveCount(2);
+  await page.getByRole('slider', { name: 'Wartość kamery', exact: true }).press('End');
+  await expect(page.locator('.normalization-inspector')).toContainText('1.00000');
+  await stage(4);
+  await expect(page.locator('.tensor-shape > code')).toHaveText('[1, 224, 224, 3]');
+  await expect(page.locator('.tensor-planes canvas')).toHaveCount(3);
+  await stage(5);
+  await expect(page.locator('.lab-plot canvas').first()).toBeVisible();
+  await page.getByRole('button', { name: 'MAPA CECH', exact: true }).click();
+  await expect(page.locator('.lab-heatmap canvas')).toBeVisible();
+  await page.locator('summary').filter({ hasText: 'WIĘCEJ DANYCH' }).click();
+  await expect(page.locator('.stat-row')).toHaveCount(7);
+  await page.locator('summary').filter({ hasText: 'MAPA NASZYCH PRZYKŁADÓW' }).click();
+  await page.getByRole('button', { name: 'OBLICZ MAPĘ PCA' }).click();
+  await expect(page.locator('.pca-plot circle')).toHaveCount(61);
+  await page.locator('summary').filter({ hasText: 'WEWNĄTRZ MODELU' }).click();
+  await page.getByRole('button', { name: 'OBLICZ MAPY AKTYWACJI' }).click();
+  await expect(page.locator('.activation-grid canvas')).toHaveCount(16, { timeout: 30000 });
+  await page.screenshot({ path: 'test-results/laboratory-features.png', fullPage: true });
+  await stage(6);
+  const scores = await page
+    .locator('.explanation-visual progress')
+    .evaluateAll((elements) => elements.map((element) => (element as HTMLProgressElement).value));
+  expect(scores[0] + scores[1]).toBeCloseTo(1, 5);
+  await expect(page.locator('.threshold-track i')).toHaveCount(2);
+  await page.locator('summary').filter({ hasText: 'HISTORIA PREDYKCJI' }).click();
+  await stage(7);
+  await expect(page.locator('.explanation-result')).toHaveText(
+    scores[0] >= scores[1] ? 'OPEN' : 'FIST',
+  );
+  await stage(8);
+  await expect(page.locator('.action-domains')).toContainText('Zwykły kod aplikacji');
+  await stage(1);
+  expect(
+    await page
+      .locator('.explanation-frame canvas')
+      .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL()),
+  ).toBe(original);
+  await stage(8);
+  await page.keyboard.press('Control+Shift+D');
+  await expect(
+    page
+      .getByRole('dialog')
+      .locator('dt')
+      .filter({ hasText: 'Liczba analiz' })
+      .locator('xpath=following-sibling::dd[1]'),
+  ).toHaveText('1');
+  await page.getByRole('button', { name: 'Zamknij', exact: true }).click();
+  await page.getByRole('button', { name: 'PORÓWNAJ Z INNYM GESTEM' }).click();
+  await expect(page.locator('video')).toBeVisible();
+  await page.getByRole('button', { name: 'ZATRZYMAJ KLATKĘ' }).click();
+  await stage(8);
+  await expect(page.locator('.comparison-panels .explanation-frame canvas')).toHaveCount(2);
+  await page.screenshot({ path: 'test-results/laboratory-comparison.png', fullPage: true });
+  await page.locator('.experiment summary').click();
+  await page.getByRole('button', { name: 'SPRAWDŹ MODEL NA INNEJ OSOBIE', exact: true }).click();
+  await expect(page.locator('.explanation-copy')).toContainText('Nie dodawaj jeszcze danych');
+  await page.getByRole('button', { name: 'ZATRZYMAJ KLATKĘ' }).click();
+  await stage(8);
+  await page.locator('.experiment summary').click();
+  await page.getByRole('button', { name: 'Dodaj różnorodne przykłady' }).click();
+  await expect(page.locator('.sample-counts b').first()).toHaveText('30');
+  await collectAndTrain(page);
+  await page.getByRole('button', { name: 'Sprawdź go' }).click();
+  await page.getByRole('button', { name: 'JAK AI TO WIDZI?', exact: true }).click();
+  await page.getByRole('button', { name: 'ZATRZYMAJ KLATKĘ' }).click();
+  const next = page.getByRole('button', { name: 'DALEJ →', exact: true });
+  for (let i = 0; i < 4; i++) await next.click();
+  await expect(page.locator('.comparison')).toContainText('Wersja modelu 1');
+  await expect(page.locator('.comparison')).toContainText('Wersja modelu 2');
+  await page.getByRole('button', { name: 'Zagraj', exact: false }).click();
+  await expect(page.locator('.game-container canvas')).toBeVisible();
+  await expect(page.locator('.explanation-frame canvas')).toHaveCount(0);
+  await page.keyboard.press('Space');
+  await reset(page);
+  await page.keyboard.press('Control+Shift+D');
+  await expect(
+    page
+      .locator('dt')
+      .filter({ hasText: 'Tensory w pamięci' })
+      .locator('xpath=following-sibling::dd[1]'),
+  ).toHaveText('0');
+  await expect(
+    page
+      .locator('dt')
+      .filter({ hasText: 'Liczba analiz' })
+      .locator('xpath=following-sibling::dd[1]'),
+  ).toHaveText('0');
+  expect(errors).toEqual([]);
+});
+
+test('snapshot pipeline matches the real classifier and repeated captures release tensors', async ({
+  page,
+}) => {
+  test.skip(!!process.env.E2E_BASE_URL, 'Source-module integration harness runs against Vite.');
+  test.setTimeout(180000);
+  await page.goto('/');
+  const result = await page.evaluate(async () => {
+    const path = '/src/services/SessionManager.ts';
+    const { SessionManager } = await import(path);
+    const preprocessingPath = '/src/features/training/preprocessing.ts';
+    const { prepareInput } = await import(preprocessingPath);
+    const session = new SessionManager();
+    const video = document.createElement('video');
+    video.muted = true;
+    video.autoplay = true;
+    document.body.append(video);
+    session.attachVideo(video);
+    await session.start();
+    const signal = new AbortController().signal;
+    const embedding = await session.extractor.extract(video);
+    for (let i = 0; i < 20; i++) {
+      session.dataset.add('OPEN', embedding.slice());
+      session.dataset.add(
+        'FIST',
+        embedding.map((value: number) => -value),
+      );
+    }
+    await session.train();
+    session.test();
+    await session.openExplanation();
+    session.predictor.stop();
+    await session.predictor.idle();
+    const baseline = session.diagnostics().memory.numTensors;
+    let equal = true,
+      stable = true,
+      unchanged = true;
+    const controllerBefore = JSON.stringify(session.gestures);
+    for (let i = 0; i < 8; i++) {
+      await session.freezeExplanation();
+      const snapshot = session.getSnapshot().explanation.snapshot;
+      if (i < 2) await session.inspectActivations();
+      session.calculatePca();
+      const prepared = prepareInput(snapshot.sourceFrame);
+      const expectedInput = await prepared.input.data();
+      equal &&=
+        snapshot.inputValues.length === expectedInput.length &&
+        snapshot.inputValues.every(
+          (v: number, index: number) => Math.abs(v - expectedInput[index]) < 1e-6,
+        );
+      prepared.input.dispose();
+      const expectedFeatures = await session.extractor.extract(snapshot.sourceFrame);
+      equal &&= snapshot.featureVector.every(
+        (v: number, index: number) => Math.abs(v - expectedFeatures[index]) < 1e-5,
+      );
+      const raw = await session.trainer.predict(snapshot.featureVector);
+      equal &&=
+        Math.abs(raw.open - snapshot.classScores.open) < 1e-6 &&
+        Math.abs(raw.fist - snapshot.classScores.fist) < 1e-6;
+      equal &&= snapshot.confidence === Math.max(raw.open, raw.fist);
+      const pixels = snapshot.sourceFrame.data.slice();
+      for (const step of [2, 3, 4, 5, 6, 7, 8, 4, 1]) session.explanationStep(step);
+      stable &&=
+        session.getSnapshot().explanation.snapshot.sourceFrame === snapshot.sourceFrame &&
+        pixels.every((v: number, index: number) => v === snapshot.sourceFrame.data[index]);
+      unchanged &&= session.diagnostics().memory.numTensors === baseline;
+      session.anotherFrame();
+      unchanged &&=
+        snapshot.featureVector.every((v: number) => v === 0) &&
+        snapshot.sourceFrame.data.every((v: number) => v === 0);
+    }
+    const analyses = session.getSnapshot().explanation.analysisCount;
+    const controllerUnchanged = JSON.stringify(session.gestures) === controllerBefore;
+    await session.freezeExplanation();
+    const first = session.getSnapshot().explanation.snapshot;
+    session.anotherFrame(false, true);
+    await session.freezeExplanation();
+    const second = session.getSnapshot().explanation.snapshot;
+    const work = session.inspectActivations();
+    await Promise.resolve();
+    await session.resetSession();
+    await work;
+    unchanged &&= [first, second].every(
+      (s) =>
+        s.sourceFrame.data.every((v: number) => v === 0) &&
+        s.inputValues.every((v: number) => v === 0) &&
+        s.featureVector.every((v: number) => v === 0),
+    );
+    const afterReset = session.getSnapshot().explanation;
+    const tensors = session.diagnostics().memory.numTensors;
+    video.remove();
+    void signal;
+    return {
+      equal,
+      stable,
+      unchanged,
+      analyses,
+      controllerUnchanged,
+      tensors,
+      clean:
+        afterReset.snapshot === null &&
+        afterReset.previous === null &&
+        afterReset.comparison === null,
+    };
+  });
+  expect(result).toEqual({
+    equal: true,
+    stable: true,
+    unchanged: true,
+    analyses: 8,
+    controllerUnchanged: true,
+    tensors: 0,
+    clean: true,
+  });
+});

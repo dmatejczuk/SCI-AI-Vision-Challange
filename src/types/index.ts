@@ -7,6 +7,7 @@ export type Stage =
   | 'READY'
   | 'TRAINING'
   | 'TRAINED'
+  | 'EXPLAIN'
   | 'TEST'
   | 'GAME'
   | 'RESULT'

@@ -1,3 +1,14 @@
+import { PredictionHistory } from '../features/prediction/PredictionHistory';
+import { projectPca } from '../features/explanation/labMath';
+import { InferencePipeline } from '../features/prediction/InferencePipeline';
+import { SnapshotCapture } from '../features/explanation/SnapshotCapture';
+import {
+  emptyExplanation,
+  releaseSnapshot,
+  summarizeSnapshot,
+  type ExplanationState,
+  type ExplanationStep,
+} from '../features/explanation/types';
 import * as tf from '@tensorflow/tfjs';
 import { config, defaults, type GestureSettings } from '../config/settings';
 import { CameraService } from '../features/camera/CameraService';
@@ -18,8 +29,11 @@ type ErrorKind =
   | 'model'
   | 'training'
   | 'prediction'
-  | 'data';
+  | 'data'
+  | 'explanation';
 interface Snapshot {
+  explanation: ExplanationState;
+  modelRevision: number;
   stage: Stage;
   counts: SampleCounts;
   progress: number;
@@ -41,6 +55,8 @@ interface Snapshot {
   slow: boolean;
 }
 const initial = (): Snapshot => ({
+  explanation: emptyExplanation(),
+  modelRevision: 0,
   stage: 'START',
   counts: { OPEN: 0, FIST: 0 },
   progress: 0,
@@ -65,8 +81,12 @@ export class SessionManager {
   dataset = new DatasetManager();
   extractor = new FeatureExtractor();
   trainer = new ModelTrainer();
+  pipeline = new InferencePipeline(this.extractor, this.trainer);
+  snapshotCapture = new SnapshotCapture(this.pipeline);
   gestures = new GestureController();
   predictor = new PredictionService();
+  history = new PredictionHistory();
+  private labController: GestureController | null = null;
   game = new GameController();
   camera = new CameraService(() => this.fail('lost', new Error('Camera track ended')));
   private snapshot = initial();
@@ -126,7 +146,7 @@ export class SessionManager {
       else if (error instanceof Error && error.message === 'INSECURE_CONTEXT') kind = 'secure';
     }
     this.predictor.stop();
-    this.gestures.reset();
+    if (this.snapshot.stage !== 'EXPLAIN') this.gestures.reset();
     if (this.snapshot.stage === 'GAME') this.pause();
     this.patch({
       error: kind,
@@ -195,37 +215,55 @@ export class SessionManager {
     this.patch({ stage: 'TRAINING' });
     return this.run(async (signal) => {
       await this.trainer.train(this.dataset, signal, (progress) => this.patch({ progress }));
-      if (!signal.aborted) this.patch({ stage: 'TRAINED', trained: true });
+      if (!signal.aborted)
+        this.patch({
+          stage: 'TRAINED',
+          trained: true,
+          modelRevision: this.snapshot.modelRevision + 1,
+        });
     }, 'training');
   }
   test() {
     if (!this.snapshot.trained || this.snapshot.busy) return;
+    this.clearExplanation(true);
     this.patch({ stage: 'TEST', error: null });
     this.beginPrediction();
   }
-  private beginPrediction() {
-    this.gestures.reset();
+  private beginPrediction(laboratory = false) {
+    if (!laboratory) this.gestures.reset();
+    const controller = laboratory ? (this.labController ??= this.gestures.clone()) : this.gestures;
     let previous = performance.now();
     const signal = this.abort.signal;
     this.predictor.start(
       async () => {
         if (document.hidden || this.snapshot.paused) {
-          this.gestures.reset();
+          if (!laboratory) this.gestures.reset();
           return;
         }
         const started = performance.now();
-        const embedding = await this.extractor.extract(this.video!);
-        const probabilities = await this.trainer.predict(embedding);
-        if (signal.aborted || !['TEST', 'GAME'].includes(this.snapshot.stage)) return;
+        const result = await this.pipeline.predict(this.video!, this.snapshot.settings);
+        if (
+          signal.aborted ||
+          !(laboratory
+            ? this.snapshot.stage === 'EXPLAIN' && !this.snapshot.explanation.snapshot
+            : ['TEST', 'GAME'].includes(this.snapshot.stage))
+        )
+          return;
         const now = performance.now();
-        const { open, fist } = probabilities;
-        const jump = this.gestures.update(open, fist);
-        const gesture =
-          open >= this.snapshot.settings.openThreshold
-            ? 'OPEN'
-            : fist >= this.snapshot.settings.fistThreshold
-              ? 'FIST'
-              : null;
+        const { open, fist } = result.classScores;
+        const jump = controller.update(open, fist);
+        this.history.add({
+          timestamp: Date.now(),
+          open,
+          fist,
+          accepted: result.acceptedGesture,
+          jump,
+          sentToGame: jump && this.snapshot.stage === 'GAME',
+          context: laboratory ? 'LAB' : this.snapshot.stage === 'GAME' ? 'GAME' : 'TEST',
+          openThreshold: controller.settings.openThreshold,
+          fistThreshold: controller.settings.fistThreshold,
+        });
+        const gesture = result.acceptedGesture;
         this.patch({
           prediction: { open, fist, gesture, latency: now - started, fps: 1000 / (now - previous) },
           armed: this.gestures.state === 'ARMED',
@@ -244,6 +282,7 @@ export class SessionManager {
     this.predictor.stop();
     await this.predictor.idle();
     if (signal.aborted || this.snapshot.resetting) return;
+    this.clearExplanation();
     this.game.reset();
     this.gestures.reset();
     this.patch({
@@ -262,6 +301,7 @@ export class SessionManager {
     this.patch({ stage: this.camera.stream ? 'OPEN' : 'START', score: 0 });
   }
   improve() {
+    this.clearExplanation(true);
     this.predictor.stop();
     this.gestures.reset();
     this.patch({ stage: 'OPEN', progress: 0, error: null, armed: false });
@@ -271,6 +311,7 @@ export class SessionManager {
     this.patch({ stage: 'PARTNER', partner: true });
   }
   finish() {
+    this.clearExplanation();
     this.predictor.stop();
     this.camera.stop();
     this.patch({ stage: 'END', cameraLabel: '' });
@@ -287,6 +328,10 @@ export class SessionManager {
   }
   configure(settings: GestureSettings) {
     this.gestures.settings = { ...settings };
+    if (this.labController) {
+      this.labController.settings = { ...settings };
+      this.labController.reset();
+    }
     this.gestures.reset();
     this.patch({ settings: { ...settings }, armed: false });
   }
@@ -302,6 +347,8 @@ export class SessionManager {
         (this.snapshot.stage === 'GAME' && this.snapshot.controlMode === 'GESTURE')
       )
         this.beginPrediction();
+      else if (this.snapshot.stage === 'EXPLAIN' && !this.snapshot.explanation.snapshot)
+        this.beginPrediction(true);
     }, 'camera');
   }
   async retry() {
@@ -314,11 +361,14 @@ export class SessionManager {
       this.beginPrediction();
       return;
     }
+    if (this.snapshot.stage === 'EXPLAIN') return this.freezeExplanation();
     await this.retryAction?.();
   }
   async resetSession() {
     if (this.snapshot.resetting) return;
     this.abort.abort();
+    this.history.clear();
+    this.clearExplanation();
     this.predictor.stop();
     this.camera.stop();
     this.game.reset();
@@ -334,6 +384,123 @@ export class SessionManager {
     this.abort = new AbortController();
     this.snapshot = initial();
     this.listeners.forEach((listener) => listener());
+  }
+  private clearExplanation(keepSummary = false) {
+    const current = this.snapshot.explanation;
+    const previous = keepSummary
+      ? current.snapshot
+        ? summarizeSnapshot(current.snapshot)
+        : current.previous
+      : null;
+    releaseSnapshot(current.snapshot);
+    releaseSnapshot(current.comparison);
+    this.labController = null;
+    this.history.clear();
+    this.patch({ explanation: { ...emptyExplanation(), previous } });
+  }
+  async openExplanation() {
+    if (
+      this.snapshot.stage !== 'TEST' ||
+      !this.snapshot.trained ||
+      this.snapshot.busy ||
+      this.snapshot.error
+    )
+      return;
+    this.predictor.stop();
+    this.history.clear();
+    this.labController = this.gestures.clone();
+    this.patch({ stage: 'EXPLAIN' });
+    await this.predictor.idle();
+    if (
+      this.getSnapshot().stage === 'EXPLAIN' &&
+      !this.snapshot.busy &&
+      !this.snapshot.explanation.snapshot
+    )
+      this.beginPrediction(true);
+  }
+  freezeExplanation() {
+    if (this.snapshot.stage !== 'EXPLAIN' || this.snapshot.explanation.snapshot)
+      return Promise.resolve();
+    this.predictor.stop();
+    return this.run(async (signal) => {
+      const current = this.snapshot.explanation;
+      const snapshot = await this.snapshotCapture.capture(
+        this.video!,
+        this.labController ?? this.gestures,
+        this.dataset.counts,
+        current.analysisCount + 1,
+        this.snapshot.modelRevision,
+        signal,
+      );
+      if (signal.aborted) {
+        releaseSnapshot(snapshot);
+        return;
+      }
+      snapshot.history = this.history.read(snapshot.timestamp);
+      snapshot.trainingMeans = this.dataset.means();
+      this.patch({
+        explanation: { ...current, snapshot, step: 1, analysisCount: current.analysisCount + 1 },
+      });
+    }, 'explanation');
+  }
+  explanationStep(step: ExplanationStep) {
+    if (
+      this.snapshot.stage !== 'EXPLAIN' ||
+      this.snapshot.busy ||
+      !this.snapshot.explanation.snapshot ||
+      step < 1 ||
+      step > 8
+    )
+      return;
+    this.patch({ explanation: { ...this.snapshot.explanation, step } });
+  }
+  anotherFrame(partnerExperiment = false, compare = false) {
+    if (this.snapshot.busy || this.snapshot.stage !== 'EXPLAIN') return;
+    const current = this.snapshot.explanation;
+    const previous = current.snapshot ? summarizeSnapshot(current.snapshot) : current.previous;
+    releaseSnapshot(current.comparison);
+    if (!compare) releaseSnapshot(current.snapshot);
+    const comparison = compare ? current.snapshot : null;
+    this.patch({
+      explanation: { ...current, snapshot: null, comparison, previous, step: 0, partnerExperiment },
+      error: null,
+    });
+    this.history.clear();
+    this.labController = this.gestures.clone();
+    this.beginPrediction(true);
+  }
+  setDetailed(detailed: boolean) {
+    this.patch({ explanation: { ...this.snapshot.explanation, detailed } });
+  }
+  calculatePca() {
+    const snapshot = this.snapshot.explanation.snapshot;
+    if (!snapshot || this.snapshot.stage !== 'EXPLAIN' || this.snapshot.busy || snapshot.pca)
+      return;
+    const examples = this.dataset.examples();
+    try {
+      const pca = projectPca(examples, snapshot.featureVector);
+      this.patch({ explanation: { ...this.snapshot.explanation, snapshot: { ...snapshot, pca } } });
+    } finally {
+      examples.forEach((example) => example.values.fill(0));
+    }
+  }
+  inspectActivations() {
+    const snapshot = this.snapshot.explanation.snapshot;
+    if (!snapshot || this.snapshot.stage !== 'EXPLAIN' || snapshot.activations)
+      return Promise.resolve();
+    return this.run(async (signal) => {
+      const activations = await this.extractor.inspectActivations(
+        snapshot.inputValues,
+        snapshot.inputMetadata.shape,
+      );
+      if (signal.aborted) {
+        activations.forEach((layer) => layer.channels.forEach((channel) => channel.values.fill(0)));
+        return;
+      }
+      this.patch({
+        explanation: { ...this.snapshot.explanation, snapshot: { ...snapshot, activations } },
+      });
+    }, 'explanation');
   }
   diagnostics() {
     return {

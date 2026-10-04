@@ -1,3 +1,4 @@
+import { explanation } from './explanation';
 export const pl = {
   inputLabel: 'WEJŚCIE / 01',
   labLabel: 'LABORATORIUM AI',
@@ -82,7 +83,9 @@ export const pl = {
   resume: 'Wznów grę',
   pausedHelp: 'Wróć przed kamerę. Po wznowieniu pokaż otwartą dłoń.',
   slow: 'Ten komputer potrzebuje więcej czasu. Zbieranie i rozpoznawanie mogą być wolniejsze.',
+  explanation,
   errors: {
+    explanation: 'Nie udało się przeanalizować klatki. Sprawdź kamerę i spróbuj ponownie.',
     camera:
       'Nie udało się uruchomić kamery. Sprawdź, czy jest podłączona i czy żadna inna aplikacja jej nie używa.',
     denied:

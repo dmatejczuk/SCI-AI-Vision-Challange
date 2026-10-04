@@ -1,3 +1,4 @@
+import { ExplanationView } from '../features/explanation/ExplanationView';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { SessionManager } from '../services/SessionManager';
 import { pl } from '../i18n/pl';
@@ -22,7 +23,8 @@ export function App() {
     };
     const visibility = () => {
       if (document.hidden && session.getSnapshot().stage === 'GAME') session.pause();
-      else if (document.hidden) session.gestures.reset();
+      else if (document.hidden && session.getSnapshot().stage !== 'EXPLAIN')
+        session.gestures.reset();
     };
     const unload = () => {
       void session.resetSession();
@@ -40,12 +42,12 @@ export function App() {
     heading.current?.focus();
   }, [stage]);
   const isCapture = stage === 'OPEN' || stage === 'FIST';
-  const showCamera = isCapture || stage === 'TEST' || stage === 'GAME';
+  const showCamera = isCapture || stage === 'TEST' || stage === 'GAME' || stage === 'EXPLAIN';
   const step = ['START', 'LOADING', 'OPEN', 'FIST'].includes(stage)
     ? 0
     : ['READY', 'TRAINING', 'TRAINED'].includes(stage)
       ? 1
-      : ['TEST', 'PARTNER'].includes(stage)
+      : ['TEST', 'PARTNER', 'EXPLAIN'].includes(stage)
         ? 2
         : 3;
   const title =
@@ -124,10 +126,11 @@ export function App() {
         </ol>
       </nav>
       <main
-        className={`${stage === 'GAME' ? 'playing' : ''} ${stage === 'START' ? 'welcome' : ''}`}
+        className={`${stage === 'GAME' ? 'playing' : ''} ${stage === 'START' ? 'welcome' : ''} ${stage === 'EXPLAIN' ? 'explaining' : ''}`}
       >
         <section
           className={`visual-panel ${showCamera ? 'camera-visible' : ''}`}
+          hidden={stage === 'EXPLAIN' && !!state.explanation.snapshot}
           aria-label={pl.camera}
         >
           <div className={`camera-frame ${stage === 'GAME' ? 'compact' : ''}`} hidden={!showCamera}>
@@ -213,7 +216,7 @@ export function App() {
             </p>
           )}
         </section>
-        <section className="task-panel">
+        <section className="task-panel" hidden={stage === 'EXPLAIN'}>
           <div className="eyebrow">
             {stage === 'START'
               ? pl.workshop
@@ -321,6 +324,9 @@ export function App() {
                   <button className="secondary" onClick={() => session.improve()}>
                     {pl.add}
                   </button>
+                  <button className="secondary" onClick={() => session.openExplanation()}>
+                    {pl.explanation.entry}
+                  </button>
                   <p className="note">{pl.confidenceNote}</p>
                 </>
               )}
@@ -380,6 +386,7 @@ export function App() {
           )}
           {state.slow && showCamera && <p className="note">{pl.slow}</p>}
         </section>
+        {stage === 'EXPLAIN' && <ExplanationView session={session} />}
         {stage === 'GAME' && (
           <section className="game-panel">
             <div className="game-heading">

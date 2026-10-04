@@ -1,3 +1,4 @@
+import { SnapshotDiagnostics } from '../explanation/ExplanationView';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Modal } from '../../components/Modal';
 import { pl } from '../../i18n/pl';
@@ -75,6 +76,7 @@ export function InstructorPanel({
         <dt>{text.backend}</dt>
         <dd>{diagnostics.backend ?? '—'}</dd>
       </dl>
+      <SnapshotDiagnostics session={session} />
       {(['fistThreshold', 'openThreshold', 'inferenceHz'] as const).map((key, index) => (
         <label className="setting" key={key}>
           {[text.threshold, text.rearm, text.frequency][index]}

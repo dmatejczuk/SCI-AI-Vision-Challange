@@ -21,7 +21,10 @@ export class PredictionService {
           Math.max(0, 1000 / frequency() - (performance.now() - started)),
         );
     };
-    this.active = tick();
+    const previous = this.active;
+    this.active = previous.then(async () => {
+      if (generation === this.generation) await tick();
+    });
   }
   stop() {
     this.generation++;

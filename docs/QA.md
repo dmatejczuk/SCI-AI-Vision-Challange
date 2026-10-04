@@ -41,3 +41,27 @@ Record date, workstation ID, browser version, camera model, lighting and tester 
 ## Educational wrap-up
 
 Ask: Which data did your model see? What changed for the second person? Did more varied examples help? Could the model be recognizing the background? Avoid interpreting displayed confidence as measured accuracy.
+
+## Detailed laboratory acceptance
+
+1. Train with real OPEN and FIST examples. Enter the laboratory and capture a frame. Confirm that
+   the basic route visits Image, Pixels, Features, Classification and Action without requiring details.
+2. Enable details. Move/click the image and use arrow keys. Verify RGB values and the 8×8 patch,
+   including edge pixels. Switch COLOR/R/G/B and inspect histogram ranges and numeric readouts.
+3. Select a pixel outside the crop, then visit Preparation: it must be identified as excluded.
+   Select inside the crop and inspect the actual nearest tensor sample; explain bilinear mixing.
+   Move the normalization slider and confirm that the frozen classification does not change.
+4. Inspect Tensor shape, dynamic element count, all three RGB planes and exact float readouts.
+5. Inspect the entire feature plot, zoom/reset, heatmap and statistics. Open class means, PCA and
+   internal activations. Explain that grid locations do not map to fingers and PCA is not the classifier.
+6. On Classification/Decision, compare softmax outputs, captured thresholds and controller state.
+   Action must show JUMP only when the isolated controller preview actually returns a jump.
+   Lab history uses a copy of the controller and must never move a running Phaser character.
+7. Compare two real gestures. Images, histograms, features and outputs should all refer to their
+   respective captured frames. Do not require the classifier to label them differently.
+8. Add diverse examples/retrain, check the model-revision labels, and return to the game without an
+   additional training pass. Confirm OPEN→FIST still generates one jump and holding FIST does not.
+9. Repeat captures and internal-map requests. Reset while two frames are retained and while an
+   activation request is in progress. Start a new group: no prior frame, summary, history or data remains.
+10. Check keyboard/touch interaction, mobile vertical scrolling and physical webcam availability.
+    Measure the basic route with actual participants; the 45–60-second target is not a benchmark result.

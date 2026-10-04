@@ -1,3 +1,61 @@
+# Detailed laboratory verification — 2026-10-04
+
+- TypeScript strict checking and ESLint pass. All 28 unit tests pass.
+- Production Vite build passes with 1,322 transformed modules; all local model shards pass integrity
+  verification. No additional runtime dependencies were introduced.
+- The complete detailed/basic laboratory scenario also passes against the production build at
+  http://localhost:4173 (36.8 seconds), including PCA, actual activation maps and game return.
+- All 10 development-browser regression scenarios pass (3.5 minutes), including CPU fallback,
+  camera recovery/cancellation, five isolated clients and real Phaser gesture/SPACE behavior.
+- The detailed UI scenario passes with the real packaged model and classifier: source pixel and RGB
+  inspection, channel matrix, histogram, normalization control, actual tensor shape and planes,
+  full feature plot/heatmap/statistics, 61-point PCA for 60 training samples plus the current frame,
+  16 intermediate activation maps, thresholds, eight stages, two-image comparison, second-person
+  experiment, additive retraining, basic route, game return and group reset.
+- The real-model memory harness passes repeated captures, PCA and activation extraction without
+  increasing retained TensorFlow tensor counts. The live GestureController remains unchanged.
+  Captured input floats and feature values match direct recomputation from the same frozen pixels.
+  Reset during activation extraction clears both retained comparison frames and leaves zero tensors.
+- Tests cover exact pixel/histogram values, crop/mirror mapping, floating-point tensor indexing,
+  population statistics, PCA against analytically known data, class means over original samples,
+  bounded chronological history, two-snapshot cleanup and serialized inference-loop restarts.
+- Pixel inspection screenshots at 1366px and 390px were inspected. The mobile layout scrolls
+  vertically without horizontal overflow. Plots use Canvas; PCA has at most 361 lightweight points.
+- Physical cameras, real-hand recognition quality and pupil completion time remain on-site checks.
+  Synthetic camera tests use real ML and Phaser; production code contains no mock predictions.
+- Docker has not been redeployed for this extension; the prior container deployment is historical.
+
+The reports below describe earlier versions, including the previous five-step module.
+
+# Explanation module verification — 2026-10-04
+
+- TypeScript and ESLint pass; 21 unit tests pass.
+- Production Vite build and local model integrity verification pass (1,316 modules).
+- The complete explanation/experiment/retraining/game/reset browser scenario also passes against
+  the built production files at http://localhost:4173 (35.5 seconds).
+- All 10 Chromium end-to-end tests pass against the development server, including the original
+  workshop, CPU fallback, camera errors, multi-client isolation and real Phaser transition tests.
+- The new UI scenario exercises a real frozen frame, all five steps, Back/Next without another
+  analysis, two-frame comparison, second-person experiment, additive retraining, cross-revision
+  score comparison, return to the trained game and a complete new-group reset.
+- A separate real-model integration test repeats capture eight times. Snapshot scores equal direct
+  classifier output for the captured embedding; confidence equals its maximum output. Navigation
+  preserves the pixel buffer and snapshot identity. Tensor counts do not increase across captures,
+  the original GestureController is unchanged, and reset during capture leaves zero tensors and no
+  retained snapshot or comparison.
+- Preprocessing tests verify the actual central crop, horizontal reversal and normalized pixel values.
+  Unit tests also check a single camera draw/read per capture, feature aggregation for vectors of
+  0/1/7/256/1024/2049 values and comparison retention across model revisions.
+- Desktop and 390px-wide feature screens were visually inspected. The mobile flow has vertical
+  scrolling without horizontal overflow.
+- Interactive inspection in the in-app browser reached the camera permission wait. A full physical
+  camera walkthrough could not be completed there. End-to-end tests use a synthetic camera, real
+  MobileNet/classifier computation and real Phaser; no user-facing inference is mocked.
+- The running Docker container described below is the earlier application build. This module is
+  available on the development server; the container has not been redeployed as part of this change.
+
+The earlier baseline verification follows for historical deployment context.
+
 # Verification report — 2026-10-03
 
 ## Verified automatically

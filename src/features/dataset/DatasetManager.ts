@@ -27,6 +27,23 @@ export class DatasetManager {
       }
     return { values, labels };
   }
+  // Snapshot copies for on-demand educational calculations, never persisted.
+  examples() {
+    return (['OPEN', 'FIST'] as const).flatMap((label) =>
+      this.samples[label].map((values) => ({ label, values: values.slice() })),
+    );
+  }
+  means() {
+    const mean = (label: Gesture) => {
+      const values = new Float32Array(config.embeddingSize);
+      for (const row of this.samples[label])
+        for (let i = 0; i < values.length; i++) values[i] += row[i] / this.samples[label].length;
+      return values;
+    };
+    const open = mean('OPEN'),
+      fist = mean('FIST');
+    return { open, fist, difference: open.map((v, i) => Math.abs(v - fist[i])) };
+  }
   clear() {
     for (const samples of Object.values(this.samples)) for (const sample of samples) sample.fill(0);
     this.samples = { OPEN: [], FIST: [] };
