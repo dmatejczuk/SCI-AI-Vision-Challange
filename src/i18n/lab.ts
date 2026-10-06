@@ -18,11 +18,11 @@ export const lab = {
     'Nie. Nie przypisujemy pojedynczej wartości do kciuka ani koloru skóry. Znaczenie jest rozłożone między wiele wartości. Nie możemy przypisać decyzji jednej konkretnej cesze semantycznej.',
   deeper: 'TROCHĘ GŁĘBIEJ',
   featureDeeper:
-    'Przesunięcie dłoni może zmienić wiele pikseli. Reprezentacja cech może zmienić się mniej — ale nie musi. Sprawdź to na dwóch obrazach. Ekstraktor tworzy reprezentację przydatną do rozróżniania przykładów; nie jest to kompresja pliku ani obraz, który da się odczytać jak zdjęcie.',
+    'Przesunięcie dłoni może zmienić wiele pikseli. Reprezentacja cech może zmienić się mniej – ale nie musi. Sprawdź to na dwóch obrazach. Ekstraktor tworzy reprezentację przydatną do rozróżniania przykładów; nie jest to kompresja pliku ani obraz, który da się odczytać jak zdjęcie.',
   excerpt: 'Fragment rzeczywistych wartości; animacja ilustruje przepływ, nie kolejne neurony.',
   compare: 'PORÓWNAJ DWA OBRAZY',
   compareHelp:
-    'Najpierw pokaż ten sam gest w innym miejscu. Potem porównaj OPEN z FIST. Wynik może zależeć także od tła i oświetlenia — podobieństwo nie jest gwarantowane.',
+    'Najpierw pokaż ten sam gest w innym miejscu. Potem porównaj OPEN z FIST. Wynik może zależeć także od tła i oświetlenia – podobieństwo nie jest gwarantowane.',
   vectors: 'Jak zmieniły się cechy?',
   difference: 'RÓŻNICA',
   cosine: 'Podobieństwo cosinusowe',

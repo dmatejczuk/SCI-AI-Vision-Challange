@@ -29,7 +29,7 @@ function Scores({ scores, snapshot }: { scores: ClassScores; snapshot?: Inferenc
             </div>
             <div className="threshold-track">
               <progress
-                aria-label={`${key.toUpperCase()} — ${t.confidence}`}
+                aria-label={`${key.toUpperCase()} – ${t.confidence}`}
                 value={scores[key]}
                 max={1}
               />
@@ -119,7 +119,7 @@ function ControllerDecision({ snapshot }: { snapshot: InferenceSnapshot }) {
         <dd>{g.after === 'ARMED' ? t.armedState : t.waiting}</dd>
         <dt>{t.candidate}</dt>
         <dd>
-          {g.candidateBefore ?? '—'} / {g.countBefore} → {g.candidateAfter ?? '—'} / {g.countAfter}
+          {g.candidateBefore ?? '–'} / {g.countBefore} → {g.candidateAfter ?? '–'} / {g.countAfter}
         </dd>
         <dt>{t.stable}</dt>
         <dd>{g.stableFrames}</dd>
@@ -306,7 +306,7 @@ function Laboratory({
                 />
               )}
               <p>
-                {t.examples}: OPEN — {snapshot.samples.OPEN} / FIST — {snapshot.samples.FIST}
+                {t.examples}: OPEN – {snapshot.samples.OPEN} / FIST – {snapshot.samples.FIST}
               </p>
               {detailed && (
                 <>

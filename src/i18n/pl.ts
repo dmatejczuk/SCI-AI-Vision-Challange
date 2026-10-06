@@ -6,6 +6,8 @@ export const pl = {
   testGame: 'Test gry bez kamery',
   keyboardTest: 'Test prowadzącego: SPACJA = SKOK',
   brand: 'AI Vision Challenge',
+  sciWebsite: 'Otwórz stronę SCI',
+  authorWebsite: 'DM – strona autora',
   school: 'TECHNIKUM INFORMATYCZNE SCI',
   workshop: 'LABORATORIUM WIZJI KOMPUTEROWEJ',
   steps: ['Dane', 'Trening', 'Test', 'Gra'],

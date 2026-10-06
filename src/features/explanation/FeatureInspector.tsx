@@ -118,7 +118,7 @@ export function PcaPlot({ result }: { result: PcaResult }) {
       </div>
       <output>
         {point &&
-          `${label(point.label)} ${point.sampleId ? `#${point.sampleId}` : ''} · PCA: ${point.x.toFixed(5)}, ${point.y.toFixed(5)}${point.distance !== undefined ? ` · ${lab.distance}: ${point.distance.toFixed(5)} · ${lab.cosine}: ${point.cosine?.toFixed(5) ?? '—'}` : ''}`}
+          `${label(point.label)} ${point.sampleId ? `#${point.sampleId}` : ''} · PCA: ${point.x.toFixed(5)}, ${point.y.toFixed(5)}${point.distance !== undefined ? ` · ${lab.distance}: ${point.distance.toFixed(5)} · ${lab.cosine}: ${point.cosine?.toFixed(5) ?? '–'}` : ''}`}
       </output>
       <label>
         {t.zoom}

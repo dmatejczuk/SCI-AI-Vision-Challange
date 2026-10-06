@@ -225,7 +225,7 @@ export function WhyPanel({
               {means.map((mean, i) => (
                 <div key={i}>
                   <dt>{i ? 'FIST' : 'OPEN'}</dt>
-                  <dd>{mean?.toFixed(5) ?? '—'}</dd>
+                  <dd>{mean?.toFixed(5) ?? '–'}</dd>
                 </div>
               ))}
             </dl>
@@ -243,7 +243,7 @@ export function WhyPanel({
                 .map((p) => (
                   <li key={p.index}>
                     {p.label} #{p.sampleId} · {lab.distance}: {p.distance?.toFixed(5)} ·{' '}
-                    {lab.cosine}: {p.cosine?.toFixed(5) ?? '—'}
+                    {lab.cosine}: {p.cosine?.toFixed(5) ?? '–'}
                   </li>
                 ))}
             </ol>

@@ -46,7 +46,7 @@ export function InstructorPanel({
         <dt>{text.camera}</dt>
         <dd>{state.cameraLabel ? text.connected : text.disconnected}</dd>
         <dt>{text.device}</dt>
-        <dd>{state.cameraLabel || '—'}</dd>
+        <dd>{state.cameraLabel || '–'}</dd>
         <dt>OPEN / FIST</dt>
         <dd>
           {state.counts.OPEN} / {state.counts.FIST}
@@ -74,7 +74,7 @@ export function InstructorPanel({
           {diagnostics.memory.unreliable ? ' ≈' : ''}
         </dd>
         <dt>{text.backend}</dt>
-        <dd>{diagnostics.backend ?? '—'}</dd>
+        <dd>{diagnostics.backend ?? '–'}</dd>
       </dl>
       <SnapshotDiagnostics session={session} />
       {(['fistThreshold', 'openThreshold', 'inferenceHz'] as const).map((key, index) => (
@@ -100,7 +100,7 @@ export function InstructorPanel({
           value={session.camera.stream?.getVideoTracks()[0]?.getSettings().deviceId ?? ''}
           onChange={(event) => void session.restartCamera(event.target.value)}
         >
-          <option value="">—</option>
+          <option value="">–</option>
           {devices.map((device) => (
             <option key={device.deviceId} value={device.deviceId}>
               {device.label || pl.camera}

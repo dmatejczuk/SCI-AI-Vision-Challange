@@ -1,4 +1,50 @@
-# Interactive explanation extension — 2026-10-04
+# Text header and favicon update – 2026-10-06
+
+The header again displays the original `SCI_` text mark with its green underscore and divider.
+The school link remains available. The supplied PNG is retained only for browser and Apple touch
+icons. TypeScript, ESLint and the targeted browser scenario pass. The scenario verifies the text
+mark, absence of header images and local icon references.
+
+# Logo asset update – 2026-10-06
+
+The shared header uses the supplied `logo100.png`, stored locally as `public/branding/sci-logo.png`
+(88×100), unchanged from the attachment. SHA-256:
+`99b7488bb7c2a83154f82eb3c5cffad69a60eb386450737976b77ec26eb1e319`.
+The same local PNG is configured as the browser favicon and Apple touch icon.
+The previous SVG asset was removed. TypeScript, ESLint and the production build pass.
+The branding browser scenario passes against the production preview, verifying favicon and Apple
+touch icon references, rendered proportions, local asset integrity, responsive layout and both external links.
+The older asset-specific checks below describe earlier versions.
+
+# SCI branding verification – 2026-10-06
+
+- TypeScript strict checks, ESLint, all **36 unit tests** and all **12 browser scenarios** pass.
+  The browser regression took 2.9 minutes and covers capture, training, test, Phaser, participant
+  swap, basic/detailed laboratory, new-group reset, instructor mode and camera recovery.
+- The local PNG is byte-for-byte identical to the supplied attachment; SHA-256:
+  `74d7b3cdfdfb7cbdd984fca396a2ea266c645c9a04292f087e050ff4164fc66f`.
+- The dedicated branding test verifies the served asset hash, natural/rendered aspect ratios,
+  exact footer text `© 2026 DM`, author-link text, both exact destinations, `_blank`,
+  `noopener noreferrer`, keyboard focus outlines, new-tab creation and null `window.opener`.
+  The current application's URL, OPEN stage and 30 collected examples survive both link clicks.
+  External destination pages are intercepted by the test; normal app use requests no external assets.
+- Desktop START, camera/test, game, detailed laboratory and 320px mobile screenshots were inspected.
+  START remains within 1366×768; the mobile page has no horizontal overflow. Header height,
+  game geometry and camera processing are unchanged. Footer copyright shares the existing bottom row.
+- No ML, game, dataset, snapshot or session lifecycle code was changed. Existing background-tab
+  game pausing remains the established behavior; links contain no application-state handlers.
+- The year is a literal `2026`, not a system-date lookup. The school asset remains local and
+  unmodified; no font, script, analytics or tracking dependency was added.
+
+- Production build passes with **1,329 modules** (3m 31s); local model integrity is verified.
+  The TensorFlow and Phaser chunk hashes are unchanged. No new build warnings were introduced.
+- Both production smoke scenarios pass at http://localhost:4173 (56.1 seconds total): the complete
+  real-ML workshop and branding/link-state checks. The branding test also verifies no extra START
+  scrolling at 1920×1080; the Full HD screenshot was visually inspected.
+
+Earlier verification reports follow.
+
+# Interactive explanation extension – 2026-10-04
 
 - TypeScript strict checks, ESLint and all **36 unit tests** pass.
 - All **10 browser regression scenarios** pass (3.6 minutes), including the complete workshop,
@@ -37,7 +83,7 @@
 
 Earlier verification reports follow; their test counts refer to those versions.
 
-# Detailed laboratory verification — 2026-10-04
+# Detailed laboratory verification – 2026-10-04
 
 - TypeScript strict checking and ESLint pass. All 28 unit tests pass.
 - Production Vite build passes with 1,322 transformed modules; all local model shards pass integrity
@@ -66,7 +112,7 @@ Earlier verification reports follow; their test counts refer to those versions.
 
 The reports below describe earlier versions, including the previous five-step module.
 
-# Explanation module verification — 2026-10-04
+# Explanation module verification – 2026-10-04
 
 - TypeScript and ESLint pass; 21 unit tests pass.
 - Production Vite build and local model integrity verification pass (1,316 modules).
@@ -95,7 +141,7 @@ The reports below describe earlier versions, including the previous five-step mo
 
 The earlier baseline verification follows for historical deployment context.
 
-# Verification report — 2026-10-03
+# Verification report – 2026-10-03
 
 ## Verified automatically
 

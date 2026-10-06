@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { test, expect, type Page } from '@playwright/test';
 async function collectAndTrain(page: Page) {
   await page.getByRole('button', { name: 'Zbierz OPEN' }).click();
@@ -678,8 +679,89 @@ test('challenge asks for a human label and retrains with the frozen example', as
   await page.getByRole('button', { name: 'ZATRZYMAJ KLATKĘ' }).click();
   await page.getByRole('button', { name: 'POKAŻ WIĘCEJ', exact: true }).click();
   await page.locator('.lab-pipeline button').nth(5).click();
-  await expect(page.locator('.explanation-visual')).toContainText('OPEN — 30 / FIST — 31');
+  await expect(page.locator('.explanation-visual')).toContainText('OPEN – 30 / FIST – 31');
   await expect(page.locator('.snapshot-badge')).toContainText('Wersja modelu 2');
   await reset(page);
   expect(errors).toEqual([]);
+});
+
+test('official branding uses a text header and local favicon without changing workshop state', async ({
+  page,
+  context,
+}) => {
+  page.setDefaultTimeout(15000);
+  const external: string[] = [];
+  await context.route('https://sci.edu.pl/**', (route) => {
+    external.push(route.request().url());
+    return route.fulfill({ body: 'SCI link destination' });
+  });
+  await context.route('https://dmatejczuk.github.io/**', (route) => {
+    external.push(route.request().url());
+    return route.fulfill({ body: 'Author link destination' });
+  });
+  await page.goto('/');
+  const logo = page.getByRole('link', { name: 'Otwórz stronę SCI', exact: true });
+  const author = page.getByRole('link', { name: 'DM – strona autora', exact: true });
+  await expect(logo).toHaveText('SCI_');
+  await expect(logo).toBeVisible();
+  await expect(page.locator('header img')).toHaveCount(0);
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/branding/sci-logo.png');
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute(
+    'href',
+    '/branding/sci-logo.png',
+  );
+  const asset = await page.request.get('/branding/sci-logo.png');
+  expect(
+    createHash('sha256')
+      .update(await asset.body())
+      .digest('hex'),
+  ).toBe('99b7488bb7c2a83154f82eb3c5cffad69a60eb386450737976b77ec26eb1e319');
+  await expect(page.locator('footer')).toHaveText('© 2026 DM');
+  await expect(page.locator('footer a')).toHaveText('DM');
+  expect(external).toEqual([]);
+  await page.screenshot({ path: 'test-results/branding-start.png', fullPage: true });
+  expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight)).toBe(
+    true,
+  );
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight)).toBe(
+    true,
+  );
+  await page.screenshot({ path: 'test-results/branding-fullhd.png', fullPage: true });
+  await page.setViewportSize({ width: 320, height: 740 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/branding-mobile.png', fullPage: true });
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.getByRole('button', { name: 'Rozpocznij', exact: false }).click();
+  await expect(page.getByRole('heading', { name: 'Pokaż otwartą dłoń' })).toBeVisible({
+    timeout: 60000,
+  });
+  await page.getByRole('button', { name: 'Zbierz OPEN' }).click();
+  await expect(page.getByRole('button', { name: 'Dalej: pięść' })).toBeEnabled({ timeout: 45000 });
+  const url = page.url();
+  for (const [link, destination] of [
+    [logo, 'https://sci.edu.pl/'],
+    [author, 'https://dmatejczuk.github.io/'],
+  ] as const) {
+    await expect(link).toHaveAttribute('href', destination);
+    await expect(link).toHaveAttribute('target', '_blank');
+    await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    await page.keyboard.press('Tab');
+    await link.focus();
+    expect(await link.evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
+    const opened = page.waitForEvent('popup');
+    await link.press('Enter');
+    const popup = await opened;
+    await popup.waitForLoadState();
+    expect(popup.url()).toBe(destination);
+    expect(await popup.evaluate(() => window.opener === null)).toBe(true);
+    await popup.close();
+    await page.bringToFront();
+    expect(page.url()).toBe(url);
+    await expect(page.getByRole('heading', { name: 'Pokaż otwartą dłoń' })).toBeVisible();
+    await expect(page.locator('.sample-counts b').first()).toHaveText('30');
+  }
+  expect(external).toEqual(['https://sci.edu.pl/', 'https://dmatejczuk.github.io/']);
+  await page.screenshot({ path: 'test-results/branding-camera.png', fullPage: true });
+  await reset(page);
 });

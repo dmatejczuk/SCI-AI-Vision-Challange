@@ -32,11 +32,11 @@ export function VectorComparison({ a, b }: { a: InferenceSnapshot; b: InferenceS
         <Frame frame={b.sourceFrame} label={`B · ${b.predictedClass}`} />
       </div>
       <p>
-        {lab.pixelDifference}: <strong>{pixels?.toFixed(4) ?? '—'}</strong>
+        {lab.pixelDifference}: <strong>{pixels?.toFixed(4) ?? '–'}</strong>
       </p>
       <p>
         {lab.distance}: <strong>{metrics.distance.toFixed(5)}</strong> · {lab.cosine}:{' '}
-        <strong>{metrics.cosine?.toFixed(5) ?? '—'}</strong>
+        <strong>{metrics.cosine?.toFixed(5) ?? '–'}</strong>
       </p>
       <p className="note">{lab.scales}</p>
       <p>{lab.metricHelp}</p>

@@ -187,7 +187,7 @@ export function PixelInspector({
         if (size <= 8 && cell >= 28 && mode !== -1) {
           ctx.fillStyle = colors.reduce((a, b) => a + b, 0) > 420 ? '#172f2c' : 'white';
           ctx.fillText(
-            value == null ? '—' : value.toFixed(mode === 4 ? 2 : 0),
+            value == null ? '–' : value.toFixed(mode === 4 ? 2 : 0),
             (x + 0.5) * cell,
             (y + 0.62) * cell,
           );

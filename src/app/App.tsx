@@ -1,3 +1,5 @@
+import { AppHeader } from '../components/layout/AppHeader';
+import { AppFooter } from '../components/layout/AppFooter';
 import { ExplanationView } from '../features/explanation/ExplanationView';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { SessionManager } from '../services/SessionManager';
@@ -89,7 +91,7 @@ export function App() {
             <b>{Math.round((index ? prediction.fist : prediction.open) * 100)}%</b>
           </div>
           <progress
-            aria-label={`${label} — ${pl.probability}`}
+            aria-label={`${label} – ${pl.probability}`}
             value={index ? prediction.fist : prediction.open}
             max={1}
           />
@@ -99,18 +101,7 @@ export function App() {
   );
   return (
     <div className="app-shell">
-      <header>
-        <a className="brand" href="#" onClick={(event) => event.preventDefault()}>
-          <span className="brand-mark">
-            SCI<span>_</span>
-          </span>
-          <span>
-            {pl.brand}
-            <small>{pl.school}</small>
-          </span>
-        </a>
-        <div className="workshop-tag">{pl.workshop}</div>
-      </header>
+      <AppHeader />
       <nav aria-label={pl.workshop}>
         <ol className="steps">
           {pl.steps.map((label, index) => (
@@ -426,16 +417,17 @@ export function App() {
           </section>
         )}
       </main>
-      <footer>
+      <div className="app-bottom">
         <span>
           <i className="privacy-dot" />
           {pl.privacy}
         </span>
+        <AppFooter />
         <button className="instructor-link" onClick={() => setInstructor(true)}>
           {pl.instructor.title}
           <kbd>⌃ ⇧ D</kbd>
         </button>
-      </footer>
+      </div>
       {instructor && <InstructorPanel session={session} onClose={() => setInstructor(false)} />}
     </div>
   );
