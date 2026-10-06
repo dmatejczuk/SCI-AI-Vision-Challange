@@ -21,48 +21,33 @@ The application interface is in Polish. Built with React, TypeScript, TensorFlow
 
 ## Deploy with Docker
 
-You need Docker Engine or Docker Desktop with Docker Compose, and available ports 80 and 443.
-Run the following commands from the project directory.
-
-### Build and start
+Requirements: a running Docker Engine or Docker Desktop in Linux-container mode, Docker Compose
+v2, and a free TCP port 80. From the repository directory:
 
 ```sh
 docker compose up -d --build
 ```
 
-The first build installs dependencies, runs the project checks, and prepares the application image.
-This can take several minutes. Downloading dependencies and base images requires Internet access.
+Open [http://localhost](http://localhost) on the Docker host, select **Rozpocznij**, and allow camera
+access. No hosts-file edits, certificates, TLS warnings, `.env` file or environment variables are
+needed. Browsers treat HTTP localhost as a secure context, so webcam access is available with
+user permission. The port is bound to loopback; this default mode is for the host computer only.
 
-### Check the service
+The first build downloads dependencies/base images and runs project checks; it can take several minutes.
 
 ```sh
 docker compose ps
 docker compose logs -f app
-```
-
-The container serves the application over HTTPS. Before first use, configure the deployment
-address and certificate trust using the [additional network and HTTPS guide](docs/DEPLOYMENT.md).
-This is required for webcam access from other computers.
-
-Then open the deployment address in Chrome or Edge, select the start button, and allow camera
-access. Each browser tab runs an independent workshop session.
-
-### Update
-
-After obtaining the latest source code, rebuild and restart the service:
-
-```sh
-docker compose up -d --build
-```
-
-### Stop and start again
-
-```sh
 docker compose stop
 docker compose start
 ```
 
-These commands preserve the container and its configuration.
+Run `docker compose up -d --build` again after updating the source. `docker compose down` removes
+the container; the next `up` recreates it.
+
+For other computers, use the separate HTTPS variant with `APP_HOST`. See the
+[deployment guide](docs/DEPLOYMENT.md) for LAN/private CA, public domains, ports and troubleshooting.
+An ordinary LAN IP over HTTP does not enable camera access.
 
 ## Run locally without Docker
 

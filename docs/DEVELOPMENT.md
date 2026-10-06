@@ -32,6 +32,27 @@ npx.cmd playwright install chromium
 npm.cmd run test:e2e
 ```
 
+## Deployment and production browser tests
+
+Docker defaults to `docker compose up -d --build` and **http://localhost** (TCP 80).
+No hosts edits, `.env` or certificates are required. Vite development uses port 5173;
+`npm run preview` serves built files on port 4173 by default. These Vite servers are development
+utilities, not the Docker deployment. LAN/public HTTPS uses the standalone network Compose file
+and `APP_HOST`; follow [DEPLOYMENT.md](DEPLOYMENT.md).
+
+To test the running default Docker container in PowerShell:
+
+```powershell
+$env:E2E_BASE_URL = 'http://localhost'
+npm run test:e2e
+Remove-Item Env:E2E_BASE_URL
+```
+
+The browser uses normal URL resolution and certificate validation. No certificate bypass or
+forced loopback hostname mapping is configured. HTTPS tests require a certificate trusted by
+the test browser. The optional `scripts/verify-https.mjs` requires `APP_HOST`, accepts `SERVER_IP`
+and `CA_FILE`, and independently checks the TLS chain and hostname.
+
 ## Source map and implementation notes
 
 See [architecture](ARCHITECTURE.md) for the state machine and ownership rules.
@@ -59,4 +80,4 @@ This is a binary image classifier, not a hand detector. A missing hand, clothing
 
 `npm run download:model` is an explicit maintenance command requiring Internet. It replaces assets/checksums from the recorded TensorFlow URL; review changed checksums before distributing a release. It is never executed on application startup or during the workshop. The build uses the existing local model.
 
-Internet is required once to obtain npm packages and Docker base images and build the deployment image. Thereafter the LAN server and clients can operate without WAN access. This means **LAN available, Internet disconnected**; clients still need access to the local server. There is intentionally no service worker hiding old builds.
+Internet is required once to obtain npm packages and Docker base images and build the deployment image. Thereafter local HTTP and private-CA LAN deployments can operate without WAN access; public ACME certificate renewal still requires Internet. This means **LAN available, Internet disconnected**; clients still need access to the local server. There is intentionally no service worker hiding old builds.

@@ -1,3 +1,36 @@
+# Deployment configuration update – 2026-10-06
+
+Default startup now serves HTTP localhost on loopback TCP 80, without environment variables,
+hosts edits, certificates or redirects. The standalone network Compose variant requires
+`APP_HOST` and supports private (`internal`) or public (`acme`) certificate issuers.
+Shared Caddy settings preserve security headers, caching and the internal health endpoint.
+Playwright no longer bypasses certificate errors or remaps deployment hostnames to loopback.
+
+Validation results:
+
+- Full `npm run check` passes: TypeScript, ESLint, 36 unit tests, model integrity and production build.
+- Docker image builds successfully, including its own full `npm run check`.
+- Default Compose starts successfully and reaches `healthy`; internal `/health` returns `ok`.
+- `http://localhost/` returns HTTP 200 with no `Location` header. Only `127.0.0.1:80` is published.
+- CSP, camera-only Permissions Policy, `nosniff` and `no-referrer` are present.
+- Chromium on HTTP localhost reports `isSecureContext: true`; `getUserMedia` opens one live
+  synthetic video track with no insecure-context or certificate bypass flags.
+- Network Compose with `APP_HOST=vision.example.test` and `internal` starts successfully;
+  HTTPS returns 200 over TLS 1.3 with verified CA chain and hostname. HTTP redirects to the
+  configured HTTPS hostname (308). No OS certificate trust or hosts entries were changed.
+- Caddy validates both local and network configurations, including the `acme` issuer variant.
+- Two browser scenarios pass against the HTTP Docker container (57.1 seconds): the complete
+  real-ML workshop with repeated resets and the text-header/favicon scenario.
+- Repository audit finds no remaining legacy hostname or em dash in tracked source/documentation.
+- Public certificate issuance and access from a separate physical LAN client were not tested:
+  these require a real domain/reachable server and client DNS/trust setup.
+- Physical webcam permissions/hardware remain subject to the on-site checklist; browser checks
+  use a synthetic camera with real application code.
+
+ Older sections are
+historical application test records; their preview ports and prior HTTPS deployment do not
+specify current startup behavior. See [DEPLOYMENT.md](DEPLOYMENT.md) for current instructions.
+
 # Text header and favicon update – 2026-10-06
 
 The header again displays the original `SCI_` text mark with its green underscore and divider.
@@ -155,7 +188,7 @@ The earlier baseline verification follows for historical deployment context.
 - Local MobileNet topology and all 55 shards pass SHA-256 integrity checks.
 - Production Vite build succeeds and a Docker image builds successfully.
 - Docker Compose starts Caddy successfully; container health check passes.
-- `https://ai-sci.local` returns HTTP 200 through Caddy on loopback with TLS 1.3. A separate Node HTTPS client verifies both the certificate chain against the exported CA and the `ai-sci.local` hostname with `rejectUnauthorized: true`.
+- the historical private-CA HTTPS endpoint returns HTTP 200 through Caddy on loopback with TLS 1.3. A separate Node HTTPS client verifies both the certificate chain against the exported CA and the configured hostname with `rejectUnauthorized: true`.
 - Caddy sends the same-origin Content Security Policy, camera-only Permissions Policy and static assets.
 - Dependency audit after updating Vitest reports zero known advisories.
 
@@ -163,14 +196,14 @@ The earlier baseline verification follows for historical deployment context.
 
 The final `ai-vision-challenge:1.0.0` image passed its embedded `npm run check` (TypeScript, lint, 15 unit tests, model integrity and Vite build), was started with Docker Compose and reached healthy status. Its `/srv` contents were copied to the workspace `dist` directory.
 
-Against that exact container at `https://ai-sci.local`, Playwright reported **7 passed, 1 intentionally skipped** in 2.6 minutes. Passing cases include the complete workshop with repeated resets and blocked external origins, five concurrent isolated clients, CPU-only training/prediction, camera denial, camera-loss recovery, diagnostic game restart/replay and cancellation of pending camera permission. The skipped isolated Phaser scene harness imports source modules through Vite, so it is development-only; it passed separately with the final Phaser distribution, confirming both gesture-triggered jumps and SPACE behavior.
+Against that exact container at the historical private-CA HTTPS endpoint, Playwright reported **7 passed, 1 intentionally skipped** in 2.6 minutes. Passing cases include the complete workshop with repeated resets and blocked external origins, five concurrent isolated clients, CPU-only training/prediction, camera denial, camera-loss recovery, diagnostic game restart/replay and cancellation of pending camera permission. The skipped isolated Phaser scene harness imports source modules through Vite, so it is development-only; it passed separately with the final Phaser distribution, confirming both gesture-triggered jumps and SPACE behavior.
 
-TLS was checked independently with explicit CA trust and hostname validation before the production browser run. The browser used only the verified certificate's SPKI pin, without changing system trust settings. The development preview remains available at `http://localhost:5173`; the production container remains running on ports 80/443. School DNS and client CA installation are still required for normal access to `https://ai-sci.local`.
+TLS was checked independently with explicit CA trust and hostname validation before the production browser run. The browser used only the verified certificate's SPKI pin, without changing system trust settings. These are historical HTTPS-only deployment results, not current startup instructions. Current default deployment is HTTP localhost; see DEPLOYMENT.md for optional network HTTPS.
 
 ## Test limits / required on-site acceptance
 
 Camera integration tests use Chromium's synthetic video device. Models, TensorFlow operations and Phaser are real. The five-client test uses five independent browser contexts on one machine, not five physical school workstations. It does not prove real-hand recognition accuracy or a 60 FPS target on the target hardware.
 
-Physical webcams, permission policies, camera-in-use behavior, real device removal/reconnection, two people, lighting/hand-distance variation, natural gesture latency and the under-five-minute first-use target still require the on-site checklist in QA.md. The school DNS/hosts entries and root CA installation on those machines have not been changed from this development environment.
+Physical webcams, permission policies, camera-in-use behavior, real device removal/reconnection, two people, lighting/hand-distance variation, natural gesture latency and the under-five-minute first-use target still require the on-site checklist in QA.md. Physical client configuration was not changed by those historical tests. DNS and private CA trust apply only to the optional LAN mode.
 
 The HTTPS test uses an explicitly supplied trusted root. It does not modify Windows system trust or imply that a participant browser already trusts this development CA. Offline coverage blocks external browser origins while keeping the LAN-equivalent server available; physical WAN-disconnection acceptance remains an on-site check.

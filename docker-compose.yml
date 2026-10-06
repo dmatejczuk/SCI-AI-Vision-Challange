@@ -4,14 +4,4 @@ services:
     image: ai-vision-challenge:1.0.0
     restart: unless-stopped
     ports:
-      - '80:80'
-      - '443:443'
-      - '443:443/udp'
-    environment:
-      APP_HOST: ${APP_HOST:-ai-sci.local}
-    volumes:
-      - caddy_data:/data
-      - caddy_config:/config
-volumes:
-  caddy_data:
-  caddy_config:
+      - '127.0.0.1:80:80'

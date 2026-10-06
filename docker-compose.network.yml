@@ -1,0 +1,20 @@
+# Standalone HTTPS variant. Use -f docker-compose.network.yml, not an override.
+services:
+  app:
+    build: .
+    image: ai-vision-challenge:1.0.0
+    restart: unless-stopped
+    command: ['caddy', 'run', '--config', '/etc/caddy/Caddyfile.network', '--adapter', 'caddyfile']
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      APP_HOST: ${APP_HOST:?Set APP_HOST to the HTTPS hostname (without scheme or port)}
+      APP_TLS_ISSUER: ${APP_TLS_ISSUER:-internal}
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+volumes:
+  caddy_data:
+  caddy_config:

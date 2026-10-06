@@ -1,5 +1,18 @@
 # Running a workshop
 
+## Choose the workstation address
+
+On a computer running Docker, start with `docker compose up -d --build` and open
+`http://localhost`. No hosts file or certificate is needed; HTTP localhost supports camera
+permission because browsers treat it as a secure context.
+
+For multiple computers using one server, follow [DEPLOYMENT.md](DEPLOYMENT.md): configure
+`APP_HOST`, client DNS (or hosts entries), and trusted HTTPS using the network Compose variant.
+A plain LAN IP over HTTP is not sufficient for camera access. Public deployments use a real
+domain and a public certificate. Verify each station's URL and trust before participants arrive.
+Use `docker compose ps` and `docker compose logs --tail=100 app` locally; add
+`-f docker-compose.network.yml` for the network variant.
+
 ## Before the first group
 
 - [ ] Verify light, framing and camera height; keep the background reasonably uncluttered.

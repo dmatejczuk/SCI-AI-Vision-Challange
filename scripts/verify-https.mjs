@@ -2,9 +2,10 @@ import https from 'node:https';
 import { readFileSync } from 'node:fs';
 import { createHash, X509Certificate } from 'node:crypto';
 
-const domain = process.env.APP_HOST || 'ai-sci.local';
-const address = process.env.SERVER_IP || '127.0.0.1';
-const ca = readFileSync(process.env.CA_FILE || 'certs/sci-root.crt');
+const domain = process.env.APP_HOST;
+if (!domain) throw new Error('Set APP_HOST to the HTTPS hostname');
+const address = process.env.SERVER_IP || domain;
+const ca = process.env.CA_FILE ? readFileSync(process.env.CA_FILE) : undefined;
 const result = await new Promise((resolve, reject) => {
   const request = https.get(
     {

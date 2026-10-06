@@ -1,0 +1,12 @@
+{
+    admin off
+}
+
+import /etc/caddy/Caddyfile.common
+
+https://{$APP_HOST} {
+    tls {
+        issuer {$APP_TLS_ISSUER:internal}
+    }
+    import app
+}

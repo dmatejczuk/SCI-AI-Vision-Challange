@@ -8,10 +8,6 @@ const browserArgs = [
   '--use-angle=swiftshader',
   '--enable-unsafe-swiftshader',
 ];
-if (process.env.E2E_TLS_SPKI)
-  browserArgs.push(`--ignore-certificate-errors-spki-list=${process.env.E2E_TLS_SPKI}`);
-if (productionUrl)
-  browserArgs.push(`--host-resolver-rules=MAP ${new URL(productionUrl).hostname} 127.0.0.1`);
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: false,

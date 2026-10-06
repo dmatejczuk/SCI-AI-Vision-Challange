@@ -6,7 +6,7 @@ COPY . .
 RUN npm run check
 
 FROM caddy:2.10-alpine
-COPY Caddyfile /etc/caddy/Caddyfile
+COPY Caddyfile Caddyfile.common Caddyfile.network /etc/caddy/
 COPY --from=build /app/dist /srv
 EXPOSE 80 443 443/udp
 HEALTHCHECK --interval=30s --timeout=5s CMD wget -q -O /dev/null http://127.0.0.1:8080/health || exit 1

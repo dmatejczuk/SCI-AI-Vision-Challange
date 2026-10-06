@@ -2,10 +2,21 @@
 
 Record date, workstation ID, browser version, camera model, lighting and tester for each run. Unless specifically recorded in VERIFICATION.md, the checks below remain pending on-site.
 
+## Deployment acceptance
+
+- [ ] Default `docker compose up -d --build` works without `.env`, hosts changes or certificates.
+- [ ] `http://localhost` returns 200 without redirects; security headers are present.
+- [ ] `docker compose ps` reaches healthy; review `docker compose logs --tail=100 app`.
+- [ ] On the host browser, confirm `window.isSecureContext`, grant camera permission and capture frames.
+- [ ] Network variant requires `APP_HOST`, resolves on another client and serves trusted HTTPS.
+- [ ] For private CA, trust only the exported server root; for public ACME, verify public DNS and TCP 80/443.
+- [ ] Confirm ordinary LAN HTTP is not used for camera sessions.
+- [ ] Follow [DEPLOYMENT.md](DEPLOYMENT.md) for commands, ports and troubleshooting.
+
 ## Five physical clients
 
 - [ ] Run on all five stations concurrently and confirm independent counts/models/scores.
-- [ ] Check HTTPS trust without exceptions on every station.
+- [ ] For clients of a LAN/public server, check HTTPS trust without exceptions on every station. For a local Docker workstation use HTTP localhost without certificates.
 - [ ] Reload after disconnecting external Internet (keep LAN) and finish the full workshop.
 - [ ] Compare game smoothness (target approximately 60 FPS) while ML inference runs.
 - [ ] Record inference frequency/latency and training duration on the target Ryzen 5 workstation.
